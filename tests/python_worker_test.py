@@ -73,4 +73,15 @@ assert not paired_degenerate['success'] and 'zero variance' in paired_degenerate
 two_sample_degenerate = run({'action':'statistics','arguments':{'method':'two_sample_t_test','values':[2,2,2],'y':[2,2,2]}})
 assert not two_sample_degenerate['success'] and 'standard error is zero' in two_sample_degenerate['error']
 
+
+# Verification must reject non-finite or negative tolerances and non-integer counts.
+verify_bad_tol = run({'action':'verify','arguments':{'kind':'arithmetic','expression':'1+1','actual':2,'tolerance':-1}})
+assert not verify_bad_tol['success'] and 'non-negative' in verify_bad_tol['error']
+verify_inf_tol = run({'action':'verify','arguments':{'kind':'arithmetic','expression':'1+1','actual':2,'tolerance':float('inf')}})
+assert not verify_inf_tol['success'] and 'finite' in verify_inf_tol['error']
+verify_fraction_count = run({'action':'verify','arguments':{'kind':'record_count','records':[1,2],'reported_count':2.5}})
+assert not verify_fraction_count['success'] and 'integer' in verify_fraction_count['error']
+verify_ok = run({'action':'verify','arguments':{'kind':'record_count','records':[1,2,3],'reported_count':3}})
+assert verify_ok['success'] and verify_ok['result']['verified']
+
 print('Python worker tests passed.')
