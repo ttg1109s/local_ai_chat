@@ -29,25 +29,14 @@ jobs:
 
           unzip -q "$ZIP_FILE" -d "$WORK_DIR"
 
-          # Bỏ lớp thư mục wraper/wrapper nếu có: copy nội dung bên trong
-          # lên root repository, tuyệt đối không giữ lại thư mục bao ngoài.
+          # Strip generic outer directory layer when ZIP contains exactly one
+          # top-level directory (name is irrelevant).
           shopt -s dotglob nullglob
           entries=("$WORK_DIR"/*)
-          wrapper_dir=""
-          for entry in "${entries[@]}"; do
-            if [[ -d "$entry" && ( "$(basename "$entry")" == "wraper" || "$(basename "$entry")" == "wrapper" ) ]]; then
-              wrapper_dir="$entry"
-              break
-            fi
-          done
 
-          if [[ -n "$wrapper_dir" ]]; then
-            cp -a "$wrapper_dir"/. .
-            # Copy any other top-level archive entries, but skip wrapper directory.
-            for entry in "${entries[@]}"; do
-              [[ "$entry" == "$wrapper_dir" ]] && continue
-              cp -a "$entry" .
-            done
+          if [[ ${#entries[@]} -eq 1 && -d "${entries[0]}" ]]; then
+            ROOT_DIR="${entries[0]}"
+            cp -a "$ROOT_DIR"/. .
           else
             cp -a "$WORK_DIR"/. .
           fi
