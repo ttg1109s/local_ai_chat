@@ -2,7 +2,7 @@
 /** Durable Agent task snapshots. Sensitive prompts are excluded unless explicitly checkpointed by caller. */
 function lac_agent_task_dir(): string {return dirname(__DIR__,2).'/storage/agent-tasks';}
 function lac_agent_task_path(string $runId): string {return lac_agent_task_dir().'/'.preg_replace('/[^a-f0-9]/','',$runId).'.json';}
-function lac_agent_task_save(string $runId,string $state,array $data=[]): void {
+function lac_agent_task_save(string $runId,string $state,array $data=[],?string $expectedFrom=null): void {
  require_once __DIR__.'/result_store.php';
  $dir=lac_agent_task_dir();if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('Could not create the task-store directory.');
  $path=lac_agent_task_path($runId);$lock=@fopen($path.'.lock','c');if(!$lock)throw new RuntimeException('Could not lock the task checkpoint.');
@@ -11,6 +11,7 @@ function lac_agent_task_save(string $runId,string $state,array $data=[]): void {
   $old=is_file($path)?json_decode((string)@file_get_contents($path),true):null;
   $old=is_array($old)?$old:[];
   $from=(string)($old['state']??'');
+  if($expectedFrom!==null&&$from!==$expectedFrom)throw new RuntimeException('Task state changed before transition: expected '.$expectedFrom.', found '.$from);
   // Keep the persisted state machine aligned with states emitted by the active Agent loop.
   // Older state names remain accepted for tasks written by previous versions.
   $allowed=[
@@ -38,7 +39,7 @@ function lac_agent_task_save(string $runId,string $state,array $data=[]): void {
    // Persist receipt metadata and Data Pack availability, never raw tool output.
    'tool_execution_state'=>$data['tool_execution_state']??$old['tool_execution_state']??null,
    'result_data_retained'=>($state==='failed'&&(int)($data['completed_tool_count']??$old['completed_tool_count']??0)>0),
-   'plan'=>$data['plan']??null,'node_results'=>$data['node_results']??[],'checkpoint_version'=>3];
+   'plan'=>$data['plan']??null,'node_results'=>$data['node_results']??[],'pending_approval'=>$data['pending_approval']??$old['pending_approval']??null,'checkpoint_version'=>3];
   // Terminal cleanup releases Data Pack bytes. Keep the immutable receipt/hash, but
   // make the persisted availability flag reflect the post-cleanup reality.
   $willReleasePacks=function_exists('lac_data_pack_cleanup_enabled')&&lac_data_pack_cleanup_enabled()&&in_array($state,['completed','failed','cancelled'],true) && !($state==='failed'&&(int)($data['completed_tool_count']??$old['completed_tool_count']??0)>0);
