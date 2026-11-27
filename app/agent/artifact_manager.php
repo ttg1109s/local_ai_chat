@@ -1,10 +1,19 @@
 <?php
 /** Durable artifact batch registry; independent from conversation messages. */
+function lac_artifact_mutation_lock() {
+ $dir=dirname(__DIR__,2).'/storage/artifacts';
+ if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('Could not create Artifact Store lock directory.');
+ $fp=@fopen($dir.'/.artifact-manager.lock','c');
+ if(!$fp||!flock($fp,LOCK_EX)){if($fp)fclose($fp);throw new RuntimeException('Could not lock Artifact Store.');}
+ return $fp;
+}
+function lac_artifact_mutation_unlock($fp): void { if(is_resource($fp)){flock($fp,LOCK_UN);fclose($fp);} }
 function lac_artifact_manifest_dir(): string {
  return dirname(__DIR__,2).'/storage/artifacts/batches';
 }
 function lac_artifact_batch_register(string $batchId,array $artifacts,array $meta=[]): array {
  if(!preg_match('/^bat_[a-f0-9]{20,40}$/',$batchId))throw new InvalidArgumentException('BATCH_ID_INVALID');
+ $lock=lac_artifact_mutation_lock();try {
  $dir=lac_artifact_manifest_dir();
  if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('Could not create the Artifact Batch Store.');
  $path=$dir.'/'.$batchId.'.json';
@@ -23,6 +32,7 @@ function lac_artifact_batch_register(string $batchId,array $artifacts,array $met
  $json=json_encode($manifest,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRETTY_PRINT);
  $tmp=$path.'.'.bin2hex(random_bytes(6)).'.tmp';if($json===false||file_put_contents($tmp,$json,LOCK_EX)===false||!rename($tmp,$path)){@unlink($tmp);throw new RuntimeException('Could not save the Artifact Batch Manifest.');}
  return $manifest;
+ } finally {lac_artifact_mutation_unlock($lock);}
 }
 function lac_artifact_batch_get(string $batchId): ?array {
  if(!preg_match('/^bat_[a-f0-9]{20,40}$/',$batchId))return null;
@@ -62,7 +72,7 @@ function lac_artifact_filename_referenced_in_batches(string $filename): bool {
  return false;
 }
 
-function lac_artifact_delete_files_if_unreferenced(array $filenames): array {
+function lac_artifact_delete_files_if_unreferenced_unlocked(array $filenames): array {
  $deleted=[];$kept=[];$failed=[];
  foreach(array_unique($filenames) as $filename){
   $path=lac_artifact_file_path((string)$filename);if(!$path)continue;
@@ -71,7 +81,19 @@ function lac_artifact_delete_files_if_unreferenced(array $filenames): array {
  }
  return ['deleted'=>$deleted,'kept'=>$kept,'failed'=>$failed];
 }
+function lac_artifact_delete_files_if_unreferenced(array $filenames): array {
+ $lock=lac_artifact_mutation_lock();try {
+ $deleted=[];$kept=[];$failed=[];
+ foreach(array_unique($filenames) as $filename){
+  $path=lac_artifact_file_path((string)$filename);if(!$path)continue;
+  if(lac_artifact_filename_referenced_in_batches((string)$filename)){$kept[]=$filename;continue;}
+  if(!file_exists($path)||@unlink($path))$deleted[]=$filename;else$failed[]=$filename;
+ }
+ return ['deleted'=>$deleted,'kept'=>$kept,'failed'=>$failed];
+ } finally {lac_artifact_mutation_unlock($lock);}
+}
 function lac_artifact_delete_by_id(string $artifactId,int $conversationId): array {
+ $lock=lac_artifact_mutation_lock();try {
  if(!preg_match('/^art_[a-f0-9]{24}$/',$artifactId))throw new InvalidArgumentException('ARTIFACT_ID_INVALID');
  $dir=lac_artifact_manifest_dir();$filename=null;$found=false;
  foreach(glob($dir.'/*.json')?:[] as $path){
@@ -85,8 +107,9 @@ function lac_artifact_delete_by_id(string $artifactId,int $conversationId): arra
   break;
  }
  if(!$found)return ['deleted'=>false,'file_deleted'=>false];
- $cleanup=lac_artifact_delete_files_if_unreferenced([$filename]);
+ $cleanup=lac_artifact_delete_files_if_unreferenced_unlocked([$filename]);
  return ['deleted'=>true,'file_deleted'=>in_array($filename,$cleanup['deleted'],true),'file_cleanup_failed'=>in_array($filename,$cleanup['failed'],true)];
+ } finally {lac_artifact_mutation_unlock($lock);}
 }
 function lac_artifact_cleanup_message(int $messageId): array {
  $files=[];$dir=lac_artifact_manifest_dir();
@@ -96,7 +119,8 @@ function lac_artifact_cleanup_message(int $messageId): array {
   foreach(($manifest['items']??[]) as $item)if(is_array($item)&&!empty($item['filename']))$files[]=(string)$item['filename'];
   @unlink($path);
  }
- return lac_artifact_delete_files_if_unreferenced($files);
+ return lac_artifact_delete_files_if_unreferenced_unlocked($files);
+ } finally {lac_artifact_mutation_unlock($lock);}
 }
 function lac_artifact_cleanup_conversation(int $conversationId): array {
  $files=[];$dir=lac_artifact_manifest_dir();
@@ -106,5 +130,6 @@ function lac_artifact_cleanup_conversation(int $conversationId): array {
   foreach(($manifest['items']??[]) as $item)if(is_array($item)&&!empty($item['filename']))$files[]=(string)$item['filename'];
   @unlink($path);
  }
- return lac_artifact_delete_files_if_unreferenced($files);
+ return lac_artifact_delete_files_if_unreferenced_unlocked($files);
+ } finally {lac_artifact_mutation_unlock($lock);}
 }
