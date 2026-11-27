@@ -112,6 +112,7 @@ function lac_artifact_delete_by_id(string $artifactId,int $conversationId): arra
  } finally {lac_artifact_mutation_unlock($lock);}
 }
 function lac_artifact_cleanup_message(int $messageId): array {
+ $lock=lac_artifact_mutation_lock();try {
  $files=[];$dir=lac_artifact_manifest_dir();
  foreach(glob($dir.'/*.json')?:[] as $path){
   if(is_link($path))continue;$manifest=json_decode((string)@file_get_contents($path),true);
@@ -123,6 +124,7 @@ function lac_artifact_cleanup_message(int $messageId): array {
  } finally {lac_artifact_mutation_unlock($lock);}
 }
 function lac_artifact_cleanup_conversation(int $conversationId): array {
+ $lock=lac_artifact_mutation_lock();try {
  $files=[];$dir=lac_artifact_manifest_dir();
  foreach(glob($dir.'/*.json')?:[] as $path){
   if(is_link($path))continue;$manifest=json_decode((string)@file_get_contents($path),true);
