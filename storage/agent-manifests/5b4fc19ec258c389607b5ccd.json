@@ -1,0 +1,84 @@
+{
+    "schema_version": 2,
+    "data_pack_id": "5b4fc19ec258c389607b5ccd",
+    "data_ref": "agent-results/5b4fc19ec258c389607b5ccd.json",
+    "run_id": "e997eebd1988cd731767",
+    "execution_id": "5b4fc19ec258c389607b5ccd",
+    "result_id": "res_d18b6ac222492ca2d455ab13",
+    "tool": "python_generate_data",
+    "created_at": "2026-11-11T01:33:13+07:00",
+    "format": "json+jsonl-segments",
+    "fields": {
+        "ok": {
+            "type": "bool",
+            "count": null
+        },
+        "id": {
+            "type": "string",
+            "count": null
+        },
+        "tool": {
+            "type": "string",
+            "count": null
+        },
+        "result": {
+            "type": "array",
+            "count": 6
+        },
+        "result.datasets": {
+            "type": "array",
+            "count": 1,
+            "segments": [
+                {
+                    "file": "5b4fc19ec258c389607b5ccd.result_datasets_6dd3dc44.000000.jsonl",
+                    "rows": 1,
+                    "bytes": 242,
+                    "sha256": "a33b24a677e5c8256b31db452a6e5b45ceaf31dbf573b7e93eec5359f18c11b5",
+                    "format": "jsonl",
+                    "committed": true
+                }
+            ],
+            "segmented": true
+        },
+        "result.values": {
+            "type": "array",
+            "count": 10,
+            "segments": [
+                {
+                    "file": "5b4fc19ec258c389607b5ccd.result_values_f4fd5846.000000.jsonl",
+                    "rows": 10,
+                    "bytes": 201,
+                    "sha256": "995143f2d9840d82e973cc62b0663f7e1e069b39f52c8d264a058b6df74f3128",
+                    "format": "jsonl",
+                    "committed": true
+                }
+            ],
+            "segmented": true
+        },
+        "duration_ms": {
+            "type": "int",
+            "count": null
+        },
+        "retryable": {
+            "type": "bool",
+            "count": null
+        },
+        "tool_call_id": {
+            "type": "string",
+            "count": null
+        },
+        "execution_id": {
+            "type": "string",
+            "count": null
+        },
+        "result_id": {
+            "type": "string",
+            "count": null
+        }
+    },
+    "integrity": "7af440ed2ff96aa012bdcea311a26a8fd3b825ad0f4c0a817ea943dbea8ef4b7",
+    "lifecycle": "committed",
+    "policy": {
+        "access": "run-scoped"
+    }
+}

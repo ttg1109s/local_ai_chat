@@ -1,0 +1,32 @@
+{
+    "schema_version": 2,
+    "data_pack_id": "ef26161e298aa3091a9957a6",
+    "data_ref": "agent-results/ef26161e298aa3091a9957a6.json",
+    "run_id": "ra006",
+    "execution_id": "ef26161e298aa3091a9957a6",
+    "tool": "t",
+    "created_at": "2026-11-10T14:06:18+00:00",
+    "format": "json+jsonl-segments",
+    "fields": {
+        "x": {
+            "type": "array",
+            "count": 1,
+            "segments": [
+                {
+                    "file": "ef26161e298aa3091a9957a6.x_2d711642.000000.jsonl",
+                    "rows": 1,
+                    "bytes": 8,
+                    "sha256": "e346432021b04179518d9614f3560ccd71354a4ee101ddcb893d6959a9d6301c",
+                    "format": "jsonl",
+                    "committed": true
+                }
+            ],
+            "segmented": true
+        }
+    },
+    "integrity": "526832c91b2dc0309e96cd3ccad418dd87346142f7fd6667fd6029b20c2f4091",
+    "lifecycle": "committed",
+    "policy": {
+        "access": "run-scoped"
+    }
+}

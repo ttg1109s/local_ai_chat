@@ -1,0 +1,114 @@
+{
+    "task_id": "e997eebd1988cd731767",
+    "run_id": "e997eebd1988cd731767",
+    "state": "completed",
+    "state_history": [
+        {
+            "state": "running",
+            "at": "2026-11-11T01:32:42+07:00"
+        },
+        {
+            "state": "executing",
+            "at": "2026-11-11T01:33:13+07:00"
+        },
+        {
+            "state": "running",
+            "at": "2026-11-11T01:33:13+07:00"
+        },
+        {
+            "state": "completed",
+            "at": "2026-11-11T01:35:35+07:00"
+        }
+    ],
+    "created_at": "2026-11-11T01:32:42+07:00",
+    "updated_at": "2026-11-11T01:35:35+07:00",
+    "started_at": "2026-11-11T01:32:42+07:00",
+    "step_count": 1,
+    "tool_call_count": 1,
+    "completed_tool_count": 1,
+    "failed_tool_count": 0,
+    "available_tools": [
+        "python_generate_data"
+    ],
+    "last_tool": "python_generate_data",
+    "last_error_code": null,
+    "elapsed_ms": 172792,
+    "limit": null,
+    "failure_phase": null,
+    "failure_message": null,
+    "tool_execution_state": {
+        "schema_version": 2,
+        "run_id": "e997eebd1988cd731767",
+        "available_tools": [
+            "python_generate_data"
+        ],
+        "tool_call_count": 1,
+        "committed_tool_count": 1,
+        "failed_or_unverified_tool_count": 0,
+        "has_executed_tool": true,
+        "successful_tools": [
+            "python_generate_data"
+        ],
+        "failed_tools": [],
+        "attempts": [
+            {
+                "tool": "python_generate_data",
+                "tool_call_id": 1234567890,
+                "status": "COMMITTED",
+                "phase": null,
+                "execution_started": true,
+                "execution_committed": true,
+                "execution_id": "5b4fc19ec258c389607b5ccd",
+                "error_code": null,
+                "data_ref": "agent-results\/5b4fc19ec258c389607b5ccd.json",
+                "result_hash": "21e20520ce078323ee2c85a3c1c459054e722f7eb303470632fb09e7b65d3eda",
+                "committed_at": "2026-11-11T01:33:13+07:00",
+                "result_available": true
+            }
+        ],
+        "invocations": [
+            {
+                "tool": "python_generate_data",
+                "tool_call_id": 1234567890,
+                "status": "COMMITTED",
+                "phase": null,
+                "execution_started": true,
+                "execution_committed": true,
+                "execution_id": "5b4fc19ec258c389607b5ccd",
+                "error_code": null,
+                "data_ref": "agent-results\/5b4fc19ec258c389607b5ccd.json",
+                "result_hash": "21e20520ce078323ee2c85a3c1c459054e722f7eb303470632fb09e7b65d3eda",
+                "committed_at": "2026-11-11T01:33:13+07:00",
+                "result_available": true
+            }
+        ],
+        "committed_executions": [
+            {
+                "tool": "python_generate_data",
+                "tool_call_id": 1234567890,
+                "status": "COMMITTED",
+                "phase": null,
+                "execution_started": true,
+                "execution_committed": true,
+                "execution_id": "5b4fc19ec258c389607b5ccd",
+                "error_code": null,
+                "data_ref": "agent-results\/5b4fc19ec258c389607b5ccd.json",
+                "result_hash": "21e20520ce078323ee2c85a3c1c459054e722f7eb303470632fb09e7b65d3eda",
+                "committed_at": "2026-11-11T01:33:13+07:00",
+                "result_available": true
+            }
+        ],
+        "failed_or_unverified_executions": [],
+        "summary": {
+            "received": 1,
+            "rejected": 0,
+            "committed": 1,
+            "failed": 0,
+            "unknown": 0
+        }
+    },
+    "result_data_retained": false,
+    "plan": null,
+    "node_results": [],
+    "checkpoint_version": 3
+}
