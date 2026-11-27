@@ -20,7 +20,7 @@ def dataframe_tool(args):
         col = args.get("column")
         if col not in df.columns: raise ValueError("Filter column not found.")
         op, val = args.get("operator", "eq"), args.get("value")
-        funcs = {"eq": lambda s: s == val, "ne": lambda s: s != val, "gt": lambda s: s > val,
+        funcs = {"eq": lambda s: s == val, "ne": lambda s: s.notna() & (s != val), "gt": lambda s: s > val,
                  "gte": lambda s: s >= val, "lt": lambda s: s < val, "lte": lambda s: s <= val,
                  "contains": lambda s: s.astype("string").str.contains(str(val), regex=False, na=False)}
         if op not in funcs: raise ValueError("Filter operator is not supported.")
