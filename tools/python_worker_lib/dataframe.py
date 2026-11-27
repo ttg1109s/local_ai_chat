@@ -22,7 +22,7 @@ def dataframe_tool(args):
         op, val = args.get("operator", "eq"), args.get("value")
         funcs = {"eq": lambda s: s == val, "ne": lambda s: s != val, "gt": lambda s: s > val,
                  "gte": lambda s: s >= val, "lt": lambda s: s < val, "lte": lambda s: s <= val,
-                 "contains": lambda s: s.astype(str).str.contains(str(val), regex=False, na=False)}
+                 "contains": lambda s: s.astype("string").str.contains(str(val), regex=False, na=False)}
         if op not in funcs: raise ValueError("Filter operator is not supported.")
         out = df.loc[funcs[op](df[col])].head(10000)
         return {"rows": int(len(out)), "records": json.loads(out.to_json(orient="records", date_format="iso"))}
