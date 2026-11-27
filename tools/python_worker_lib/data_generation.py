@@ -13,12 +13,16 @@ def generate_data_tool(args):
         raise ValueError("series_count must be between 1 and 20.")
     low = float(args.get("min", 0))
     high = float(args.get("max", 100))
+    if distribution in ("integer", "uniform") and (not math.isfinite(low) or not math.isfinite(high)):
+        raise ValueError("min and max must be finite numbers.")
     if distribution in ("integer", "uniform") and low >= high:
         raise ValueError("min must be less than max.")
+    if distribution == "integer" and math.ceil(low) > math.floor(high):
+        raise ValueError("min and max must include at least one integer value.")
     mean = float(args.get("mean", 0))
     std = float(args.get("std", 1))
-    if distribution == "normal" and std <= 0:
-        raise ValueError("std must be greater than 0.")
+    if distribution == "normal" and (not math.isfinite(mean) or not math.isfinite(std) or std <= 0):
+        raise ValueError("mean must be finite and std must be a finite number greater than 0.")
     base_seed = args.get("seed")
     datasets = []
     for index in range(series_count):
