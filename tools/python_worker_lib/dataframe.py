@@ -31,6 +31,7 @@ def dataframe_tool(args):
         if col not in df.columns: raise ValueError("Group-by column not found.")
         value_col = args.get("value_column")
         if agg not in ("count", "sum", "mean", "min", "max"): raise ValueError("Invalid aggregation operation.")
+        if agg != "count" and value_col not in df.columns: raise ValueError("Value column not found for group-by aggregation.")
         grouped = df.groupby(col, dropna=False)
         result = grouped.size() if agg == "count" else getattr(grouped[value_col], agg)()
         return {"groups": json.loads(result.reset_index(name="value").to_json(orient="records"))}
