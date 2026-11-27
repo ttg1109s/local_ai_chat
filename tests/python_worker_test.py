@@ -69,7 +69,7 @@ assert not anova_constant['success'] and 'all observations are identical' in ano
 one_sample_degenerate = run({'action':'statistics','arguments':{'method':'one_sample_t_test','values':[4,4,4],'population_mean':4}})
 assert not one_sample_degenerate['success'] and 'undefined' in one_sample_degenerate['error']
 paired_degenerate = run({'action':'statistics','arguments':{'method':'paired_t_test','values':[1,2,3],'y':[1,2,3]}})
-assert not paired_degenerate['success'] and 'all paired differences are zero' in paired_degenerate['error']
+assert not paired_degenerate['success'] and 'zero variance' in paired_degenerate['error']
 two_sample_degenerate = run({'action':'statistics','arguments':{'method':'two_sample_t_test','values':[2,2,2],'y':[2,2,2]}})
 assert not two_sample_degenerate['success'] and 'standard error is zero' in two_sample_degenerate['error']
 
