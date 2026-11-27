@@ -184,6 +184,8 @@ def statistics_tool(args):
     if method in ("one_sample_t_test", "one_sample_ttest"):
         popmean = _finite_scalar(args.get("population_mean"), "population_mean", 0)
         if len(x) < 2: raise ValueError("One-sample t-test requires at least 2 observations.")
+        if np.std(x, ddof=1) == 0 and float(np.mean(x)) == popmean:
+            raise ValueError("One-sample t-test is undefined when the sample equals the hypothesized mean with zero variance.")
         res = stats.ttest_1samp(x, popmean, alternative=alternative)
         ci = _mean_ci(np.asarray(x) - popmean, confidence, stats, alternative)
         p = float(res.pvalue)
@@ -223,6 +225,8 @@ def statistics_tool(args):
         else:
             crit = float(stats.t.ppf(confidence, df))
             ci_lower, ci_upper = diff-crit*se, None
+        if se == 0:
+            raise ValueError("Independent t-test is undefined when the estimated standard error is zero.")
         p = float(res.pvalue)
         return {"method": "independent_t_test", "test_variant": "Student" if equal_var else "Welch",
                 "n_x": nx, "n_y": ny, "mean_x": float(np.mean(x)), "mean_y": float(np.mean(y)),
@@ -237,6 +241,8 @@ def statistics_tool(args):
         y = numeric_list(y_raw, "y")
         if len(x) != len(y) or len(x) < 2: raise ValueError("Paired t-test requires two arrays of equal length and at least 2 pairs.")
         d = np.asarray(x) - np.asarray(y)
+        if np.std(d, ddof=1) == 0 and float(np.mean(d)) == 0:
+            raise ValueError("Paired t-test is undefined when all paired differences are zero.")
         res = stats.ttest_rel(x, y, alternative=alternative)
         ci = _mean_ci(d, confidence, stats, alternative)
         return {"method": "paired_t_test", "n_pairs": len(x), "mean_difference": float(np.mean(d)),
