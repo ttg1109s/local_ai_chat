@@ -84,4 +84,14 @@ assert not verify_fraction_count['success'] and 'integer' in verify_fraction_cou
 verify_ok = run({'action':'verify','arguments':{'kind':'record_count','records':[1,2,3],'reported_count':3}})
 assert verify_ok['success'] and verify_ok['result']['verified']
 
+
+# Generation dimensions and seeds must not silently truncate or coerce types.
+for bad_gen in (
+    {'distribution':'integer','count':2.5,'min':1,'max':5},
+    {'distribution':'uniform','count':3,'series_count':1.5},
+    {'distribution':'normal','count':3,'seed':True},
+):
+    bad_result = run({'action':'generate_data','arguments':bad_gen})
+    assert not bad_result['success'], f'Invalid generation dimensions/seed should fail: {bad_gen}'
+
 print('Python worker tests passed.')
