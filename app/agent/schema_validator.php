@@ -1,6 +1,6 @@
 <?php
 /** Small JSON-Schema subset validator; deliberately dependency-free for local PHP installs. */
-function lac_schema_strlen(string $value): int {return function_exists('mb_strlen')?mb_strlen($value,'UTF-8'):strlen($value);}
+function lac_schema_strlen(string $value): int {if(function_exists('mb_strlen'))return mb_strlen($value,'UTF-8');$count=@preg_match_all('/./us',$value,$matches);return $count===false?strlen($value):(int)$count;}
 function lac_schema_type_ok(mixed $v, mixed $type,bool $rootObject=false): bool {
  $types=is_array($type)?$type:[$type];
  foreach($types as $t){$ok=match($t){'object'=>(is_array($v)&&(!array_is_list($v)||($rootObject&&$v===[])))||$v instanceof stdClass,'array'=>is_array($v)&&array_is_list($v),'string'=>is_string($v),'number'=>(is_int($v)||is_float($v))&&!is_bool($v)&&is_finite((float)$v),'integer'=>is_int($v),'boolean'=>is_bool($v),'null'=>$v===null,default=>false};if($ok)return true;}
