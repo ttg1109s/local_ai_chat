@@ -94,4 +94,11 @@ for bad_gen in (
     bad_result = run({'action':'generate_data','arguments':bad_gen})
     assert not bad_result['success'], f'Invalid generation dimensions/seed should fail: {bad_gen}'
 
+
+# Finite distribution parameters can still overflow during generation.
+overflow_uniform = run({'action':'generate_data','arguments':{'distribution':'uniform','count':2,'min':-1e308,'max':1e308}})
+assert not overflow_uniform['success'] and 'too large to represent safely' in overflow_uniform['error']
+overflow_normal = run({'action':'generate_data','arguments':{'distribution':'normal','count':3,'mean':1.7e308,'std':1e308,'seed':1}})
+assert not overflow_normal['success'] and 'non-finite value' in overflow_normal['error']
+
 print('Python worker tests passed.')
