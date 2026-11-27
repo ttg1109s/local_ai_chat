@@ -79,7 +79,7 @@ if($action==='agent_task_reject'){
  if(!preg_match('/^[a-f0-9]{20}$/',$runId))out(['error'=>'Invalid run_id.'],422);
  $task=lac_agent_task_load($runId);
  if(!$task||($task['state']??'')!=='waiting_approval')out(['error'=>'No action is waiting for approval.'],409);
- lac_agent_task_save($runId,'cancelled',['approval_rejected'=>true,'pending_approval'=>$task['pending_approval']??null]);
+ lac_agent_task_save($runId,'cancelled',['approval_rejected'=>true,'pending_approval'=>$task['pending_approval']??null],'waiting_approval');
  out(['ok'=>true,'state'=>'cancelled']);
 }
 if($action==='agent_task_approve'){
@@ -97,8 +97,10 @@ if($action==='agent_task_approve'){
  if(($pending['kind']??'')==='tool_call'){
   $tool=(string)($pending['tool']??'');$args=is_array($pending['arguments']??null)?$pending['arguments']:[];
   if(!in_array($tool,$valid,true))out(['error'=>'Tool is no longer enabled.'],403);
+  // Claim approval atomically before executing to prevent duplicate side effects from concurrent clicks/retries.
+  try{lac_agent_task_save($runId,'executing',['pending_approval'=>$pending],'waiting_approval');}catch(Throwable $e){out(['error'=>'Approval is no longer pending; another request may have handled it.'],409);}
   $result=lac_tool_execute_managed($pdo,$tool,$args,$valid,['sandbox'=>false,'run_id'=>$runId,'python'=>getenv('LOCAL_AI_PYTHON')?:(PHP_OS_FAMILY==='Windows'?'python':'python3')],(string)($pending['tool_call_id']??('approved_'.bin2hex(random_bytes(8)))));
-  lac_agent_task_save($runId,!empty($result['ok'])?'completed':'failed',['approved'=>true,'approved_pending'=>$pending,'result'=>$result]);
+  lac_agent_task_save($runId,!empty($result['ok'])?'completed':'failed',['approved'=>true,'approved_pending'=>$pending,'result'=>$result],'executing');
   out(['ok'=>!empty($result['ok']),'state'=>!empty($result['ok'])?'completed':'failed','result'=>$result],empty($result['ok'])?500:200);
  }
  out(['error'=>'Approval request type is not supported.'],422);
