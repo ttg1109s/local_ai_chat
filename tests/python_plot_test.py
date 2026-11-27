@@ -22,4 +22,23 @@ with tempfile.TemporaryDirectory() as tmp:
         assert result["series_count"] == 2
         assert (Path(tmp) / result["file"]).is_file()
 
+
+with tempfile.TemporaryDirectory() as tmp:
+    for bad_x in ([float("nan"), 2, 3], [float("inf"), 2, 3], [True, 2, 3]):
+        try:
+            worker.plot_tool({"chart_type":"scatter","x":bad_x,"y":[1,2,3]}, Path(tmp))
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Invalid scatter x-axis should be rejected: {bad_x}")
+    try:
+        worker.plot_tool({"chart_type":"bar","series":[
+            {"name":"A","x":["a","b"],"values":[1,2]},
+            {"name":"B","x":["b","a"],"values":[2,1]},
+        ]}, Path(tmp))
+    except ValueError as exc:
+        assert "identical x-axis labels" in str(exc)
+    else:
+        raise AssertionError("Mismatched multi-series bar labels should be rejected")
+
 print("Python plot tests passed: omitted x gets generated index axis.")
