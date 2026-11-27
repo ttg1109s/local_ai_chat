@@ -30,6 +30,8 @@ worker_log('Local AI RAG worker started (RAG stack on-demand; idle shutdown: 300
 $lastEnsureRequest=0;$lastStopRequest=0;$lastWorkAt=time();$workerLease='worker:'.getmypid();
 do {
   try {
+    // Recover ingest jobs whose vector outbox completed but whose final status update was interrupted.
+    $pdo->exec("UPDATE document_ingest_jobs AS j SET status='completed',last_error=NULL,completed_at=COALESCE(completed_at,NOW()) WHERE j.status='embedding' AND NOT EXISTS (SELECT 1 FROM rag_document_chunk_map m JOIN vector_outbox o ON o.canonical_chunk_id=m.canonical_chunk_id WHERE m.document_id=j.document_id AND o.status<>'completed')");
     $pending=worker_has_pending_work($pdo);
     $ready=worker_embedding_ready($healthUrl)&&worker_qdrant_ready();
     if($pending&&!$ready){
