@@ -17,7 +17,9 @@ foreach(['schema_version','event_id','sequence','timestamp','trace_id','run_id',
 if($first['schema_version']!==2||$first['outcome']!=='proposed'||$first['request_id']!=='request_test'||$first['tool_call_id']!=='call_test')throw new RuntimeException('Correlation or event taxonomy failed.');
 if($rows[1]['outcome']!=='rejected'||$rows[2]['outcome']!=='transition'||$rows[3]['outcome']!=='partial')throw new RuntimeException('Outcome taxonomy failed.');
 if(array_column($rows,'sequence')!==[1,2,3,4])throw new RuntimeException('Sequence continuity failed.');
-unlink($file);rmdir($dir);
+$lockPath=$file.'.lock';if(!is_file($lockPath))throw new RuntimeException('Trace writer must use stable lock file.');
+$stale=$dir.'/old.jsonl';file_put_contents($stale,'old');touch($stale,time()-8*86400);$clean=lac_unified_trace_cleanup($dir,7);if(($clean['deleted']??0)!==1||is_file($stale))throw new RuntimeException('Trace retention cleanup failed for stale files.');
+unlink($file);@unlink($lockPath);rmdir($dir);
 lac_unified_trace_set_context(['trace_file'=>'','sequence'=>0]);
 if(lac_unified_trace_write('trace_test_without_path')!==false||!empty(lac_unified_trace_health()['healthy']))throw new RuntimeException('Missing trace path was not reported as degraded.');
 echo "PASS: trace schema v2, event taxonomy, correlation identifiers, and durable append\n";
