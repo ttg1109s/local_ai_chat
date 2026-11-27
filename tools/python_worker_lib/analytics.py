@@ -274,8 +274,10 @@ def statistics_tool(args):
             raise ValueError("ANOVA requires groups to be a list containing at least 2 numeric groups.")
         arrays = [np.asarray(numeric_list(g, f"groups[{i}]"), dtype=float) for i, g in enumerate(groups)]
         if any(len(g) < 2 for g in arrays): raise ValueError("Each ANOVA group requires at least 2 observations.")
-        res = stats.f_oneway(*arrays)
         allv = np.concatenate(arrays)
+        if np.std(allv) == 0:
+            raise ValueError("ANOVA is undefined when all observations are identical.")
+        res = stats.f_oneway(*arrays)
         grand = float(np.mean(allv))
         ss_between = float(sum(len(g)*(float(np.mean(g))-grand)**2 for g in arrays))
         ss_total = float(np.sum((allv-grand)**2))
@@ -313,6 +315,8 @@ def statistics_tool(args):
         if expected is None:
             raise ValueError("Chi-square goodness-of-fit requires expected to be an array of expected frequencies.")
         exp = np.asarray(numeric_list(expected, "expected"), dtype=float)
+        if not np.all(observed == np.floor(observed)):
+            raise ValueError("Observed chi-square frequencies must be integer counts.")
         if len(exp) != len(observed): raise ValueError("observed and expected must have the same length.")
         if np.any(observed < 0) or np.any(exp <= 0): raise ValueError("Observed frequencies must be non-negative and expected frequencies must be greater than zero.")
         if not np.isclose(np.sum(observed), np.sum(exp), rtol=1e-7, atol=1e-9):
