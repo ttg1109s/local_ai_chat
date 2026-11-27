@@ -1,0 +1,37 @@
+{
+    "schema_version": 2,
+    "data_pack_id": "e7edb645ab1ad524f268c02d",
+    "data_ref": "agent-results/e7edb645ab1ad524f268c02d.json",
+    "run_id": "recovery_commit_3fd970e159",
+    "execution_id": "e7edb645ab1ad524f268c02d",
+    "tool": "python_statistics",
+    "created_at": "2026-11-10T14:08:14+00:00",
+    "format": "json+jsonl-segments",
+    "fields": {
+        "ok": {
+            "type": "bool",
+            "count": null
+        },
+        "tool": {
+            "type": "string",
+            "count": null
+        },
+        "execution_id": {
+            "type": "string",
+            "count": null
+        },
+        "tool_call_id": {
+            "type": "string",
+            "count": null
+        },
+        "result": {
+            "type": "array",
+            "count": 1
+        }
+    },
+    "integrity": "0e383116d3d6fc636dc2f1ff2ca9032de70da9a5a4aab3c8e2409fc7012d0e2c",
+    "lifecycle": "committed",
+    "policy": {
+        "access": "run-scoped"
+    }
+}

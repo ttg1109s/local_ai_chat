@@ -1,0 +1,25 @@
+{
+    "schema_version": 2,
+    "data_pack_id": "819e9bae4bf7822ffeaaf5752032f7fb",
+    "data_ref": "agent-results/819e9bae4bf7822ffeaaf5752032f7fb.json",
+    "run_id": "776e66e97876dca6d34d",
+    "execution_id": "819e9bae4bf7822ffeaaf5752032f7fb",
+    "tool": "python_calculate",
+    "created_at": "2026-11-10T14:14:29+00:00",
+    "format": "json+jsonl-segments",
+    "fields": {
+        "ok": {
+            "type": "bool",
+            "count": null
+        },
+        "result": {
+            "type": "int",
+            "count": null
+        }
+    },
+    "integrity": "9787a0f6918a23a4468654869f855cbd72db56330517a099e074bf3f6e4bba28",
+    "lifecycle": "committed",
+    "policy": {
+        "access": "run-scoped"
+    }
+}

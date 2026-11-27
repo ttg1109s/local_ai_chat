@@ -1,0 +1,26 @@
+<?php
+require_once __DIR__.'/../app/agent/protocol.php';
+require_once __DIR__.'/../app/agent/tool_registry.php';
+require_once __DIR__.'/../app/agent/tool_permissions.php';
+require_once __DIR__.'/../app/agent/protocol_compiler.php';
+require_once __DIR__.'/../app/agent/response_contract.php';
+require_once __DIR__.'/../app/agent/loop/protocol.php';
+$catalog=lac_tool_catalog();$permissions=lac_agent_permissions(['python_calculate','python_plot']);
+if($permissions!==['python_calculate','python_plot'])throw new RuntimeException('Permissions must remain strict opt-ins.');
+$violations=lac_agent_tool_selection_violations([['tool'=>'python_calculate','tool_call_id'=>'call-1','arguments'=>['expression'=>'2+2']],['tool'=>'unknown_tool','tool_call_id'=>'call-2','arguments'=>[]]],$catalog,$permissions);
+if(count($violations)!==1||($violations[0]['error_code']??'')!=='UNKNOWN_TOOL')throw new RuntimeException('Unknown tools must be rejected by server-side preflight.');
+$compiled=lac_agent_compile_protocol([$catalog['python_calculate']]);
+if(str_contains($compiled['system_text'],'input_schema')||str_contains($compiled['system_text'],'"properties"'))throw new RuntimeException('Dispatch must not preload schemas.');
+foreach(['already enabled','tool_help_request','tool_call_id','Provider-native tool_calls are unsupported'] as $needle)if(!str_contains($compiled['system_text'],$needle))throw new RuntimeException('Compiled protocol is missing: '.$needle);
+$valid=lac_agent_loop_validate_message(['type'=>'tool_call','tool'=>'python_calculate','tool_call_id'=>'call-1','arguments'=>(object)['expression'=>'2+2']]);
+if(empty($valid['valid']))throw new RuntimeException('Canonical tool_call should validate.');
+$invalid=lac_agent_loop_validate_message(['type'=>'tool_call','tool'=>'python_calculate','arguments'=>(object)['expression'=>'2+2']]);
+if(($invalid['error']??'')!=='INVALID_PROTOCOL_FIELDS')throw new RuntimeException('tool_call_id is mandatory.');
+$loop=file_get_contents(__DIR__.'/../app/agent/loop/runner.php');
+$orchestrator=file_get_contents(__DIR__.'/../app/chat/orchestrator.php');
+if(!str_contains($orchestrator,"\$dispatchPayload['messages'][0]['content'].=\$compiled['system_text']"))throw new RuntimeException('Round 0 must receive the enabled tool catalog.');
+if(!str_contains($orchestrator,"\$context['dispatch_response']=\$dispatchResponse"))throw new RuntimeException('The initial model handoff response must be passed into Agent Runtime.');
+if(!str_contains($orchestrator,'PROVIDER_NATIVE_TOOL_OUTPUT_UNSUPPORTED'))throw new RuntimeException('Provider-native output must be rejected.');
+if(str_contains($loop,'finalizationRequired'))throw new RuntimeException('Unreachable finalization state must not remain in the loop.');
+if(str_contains($loop,'lac_agent_parse_plan(')||str_contains($loop,'lac_agent_plan_validate('))throw new RuntimeException('DAG planning must not be introduced into the incremental Agent loop.');
+echo "PASS: canonical unified protocol, strict capability preflight, persistent context, and native-call rejection\n";
