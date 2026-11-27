@@ -56,4 +56,12 @@ assert df_filter['success'] and df_filter['result']['rows'] == 0, 'Nulls must no
 df_group = run({'action':'dataframe','arguments':{'operation':'groupby','data':[{'category':'A','amount':1}],'column':'category','aggregation':'sum','value_column':'missing'}})
 assert not df_group['success'] and 'Value column not found' in df_group['error']
 
+
+# Chi-square observed values are counts, not arbitrary fractional measurements.
+chi_fractional = run({'action':'statistics','arguments':{'method':'chi_square','values':[2.5,3.5],'expected':[3,3]}})
+assert not chi_fractional['success'] and 'integer counts' in chi_fractional['error']
+# Degenerate ANOVA with no variation anywhere must fail clearly rather than return NaN.
+anova_constant = run({'action':'statistics','arguments':{'method':'anova','groups':[[5,5],[5,5]]}})
+assert not anova_constant['success'] and 'all observations are identical' in anova_constant['error']
+
 print('Python worker tests passed.')
