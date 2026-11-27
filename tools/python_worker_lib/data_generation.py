@@ -19,10 +19,12 @@ def generate_data_tool(args):
         raise ValueError("series_count must be between 1 and 20.")
     low = float(args.get("min", 0))
     high = float(args.get("max", 100))
-    if distribution in ("integer", "uniform") and (not math.isfinite(low) or not math.isfinite(high)):
+    if not math.isfinite(low) or not math.isfinite(high):
         raise ValueError("min and max must be finite numbers.")
     if distribution in ("integer", "uniform") and low >= high:
         raise ValueError("min must be less than max.")
+    if distribution == "uniform" and not math.isfinite(high - low):
+        raise ValueError("Uniform range is too large to represent safely.")
     if distribution == "integer" and math.ceil(low) > math.floor(high):
         raise ValueError("min and max must include at least one integer value.")
     mean = float(args.get("mean", 0))
@@ -43,6 +45,8 @@ def generate_data_tool(args):
             values = [rng.uniform(low, high) for _ in range(count)]
         else:
             values = [rng.gauss(mean, std) for _ in range(count)]
+            if not all(math.isfinite(value) for value in values):
+                raise ValueError("Normal distribution generated a non-finite value; reduce mean or std.")
         datasets.append({"name": f"Series {index + 1}", "values": values, "seed": seed})
     result = {"distribution": distribution, "count": count, "series_count": series_count,
               "seed": base_seed, "datasets": datasets}
