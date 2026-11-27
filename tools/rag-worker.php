@@ -1,7 +1,7 @@
 <?php
 if(PHP_SAPI!=='cli'){http_response_code(403);exit("CLI only\n");}
 require __DIR__.'/../app/bootstrap.php';require __DIR__.'/../app/rag_engine.php';
-$once=in_array('--once',$argv??[],true);$sleep=5;$idleSeconds=60;
+$once=in_array('--once',$argv??[],true);$sleep=5;$idleSeconds=300;
 $embeddingUrl=rtrim(setting($pdo,'embedding_endpoint','http://127.0.0.1:8081/v1/embeddings'),'/');
 $healthUrl=preg_replace('~/v1/embeddings$~','/health',$embeddingUrl);
 $log=__DIR__.'/../storage/rag-worker.log';$activityFile=__DIR__.'/../storage/bge-activity.touch';
