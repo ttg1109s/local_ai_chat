@@ -55,7 +55,8 @@ def crawl_site(start_url: str, max_pages: int = 8, max_depth: int = 1,
         except Exception as exc:
             errors.append({"url": str(url)[:1000], "error": str(exc)[:500]})
     return {
-        "success": True,
+        "success": bool(pages),
+        "error": None if pages else "No pages were successfully crawled.",
         "start_url": clean_start,
         "host": allowed_host,
         "pages": pages,
