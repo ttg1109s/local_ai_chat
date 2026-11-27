@@ -25,6 +25,13 @@ function lac_agent_context_message_text(array $message): string {
     $encoded=json_encode($content,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_INVALID_UTF8_SUBSTITUTE);
     return is_string($encoded)?$encoded:'';
 }
+/** Truncate a protected message to a hard token ceiling. */
+function lac_agent_context_truncate_message(array $message,int $maxTokens,?string $modelId=null): array {
+ $text=lac_agent_context_message_text($message);$suffix=' [truncated by context budget]';$lo=0;$hi=strlen($text);$best='';
+ while($lo<=$hi){$mid=intdiv($lo+$hi,2);$candidate=substr($text,0,$mid).$suffix;
+  if(lac_agent_context_estimate_tokens($candidate,$modelId)<=$maxTokens){$best=$candidate;$lo=$mid+1;}else{$hi=$mid-1;}}
+ if($best==='')$best=' [truncated]';$message['content']=$best;return $message;
+}
 function lac_agent_context_build(array $payload,array $options=[]): array {
     $messages=$payload['messages']??[];
     if(!is_array($messages)||count($messages)<1)return ['payload'=>$payload,'stats'=>['messages_in'=>count((array)$messages),'messages_out'=>count((array)$messages),'compacted'=>false]];
@@ -49,18 +56,22 @@ function lac_agent_context_build(array $payload,array $options=[]): array {
     foreach(array_slice($ranked,0,8) as $candidate)$keep[$candidate['index']]=true;
     foreach($protected as $i=>$_)$keep[$i]=true;
     ksort($keep);$selected=[];$used=0;$omitted=[];
-    // Newest messages win within the budget; protected instructions/objective are retained.
-    $indices=array_keys($keep);rsort($indices);
+    // Protected system/developer/objective messages get first allocation, in original order.
+    // Remaining recent/relevant messages are considered newest-first.
+    $protectedIndices=array_keys($protected);sort($protectedIndices);
+    $indices=array_values(array_diff(array_keys($keep),$protectedIndices));rsort($indices);
+    $indices=array_merge($protectedIndices,$indices);
     foreach($indices as $i){
         $m=$messages[$i]??null;if(!is_array($m))continue;
         $text=lac_agent_context_message_text($m);$cost=lac_agent_context_estimate_tokens($text,$modelId)+8;
         $isProtected=isset($protected[$i]);
         if(!$isProtected&&$used+$cost>$usable){$omitted[]=$i;continue;}
-        if($isProtected&&$used+$cost>$budget){
-            // Keep instructions but bound pathological oversized user content.
-            $m['content']=substr($text,0,12000).' [objective/instruction truncated by context budget]';
-            $cost=lac_agent_context_estimate_tokens((string)$m['content'],$modelId)+8;
+        if($isProtected&&$used+$cost>$usable){
+            // Protected content is truncated adaptively; never allow it to overflow the budget.
+            $m=lac_agent_context_truncate_message($m,max(0,$usable-$used-8),$modelId);
+            $cost=lac_agent_context_estimate_tokens(lac_agent_context_message_text($m),$modelId)+8;
         }
+        if($used+$cost>$usable){$omitted[]=$i;continue;}
         $selected[$i]=$m;$used+=$cost;
     }
     $omitted=array_values(array_unique(array_merge($omitted,array_diff(range(0,$n-1),array_keys($selected)))));
