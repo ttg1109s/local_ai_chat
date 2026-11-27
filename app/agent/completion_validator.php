@@ -66,6 +66,13 @@ function lac_agent_unverified_tool_claims(string $content,array $calls): array {
  * Supported JSON Schema subset: type, required, properties, items, enum,
  * minItems/maxItems, minLength/maxLength, minimum/maximum, and additionalProperties.
  */
+
+/** JSON Schema string length counts Unicode code points, not UTF-8 bytes. */
+function lac_agent_schema_string_length(string $value): int {
+ $matched=preg_match_all('/./us',$value,$matches);
+ return $matched===false?strlen($value):$matched;
+}
+
 function lac_agent_output_contract_issues(string $content,array $contract): array {
  if(($contract['type']??'')!=='json_schema')return [];
  $schema=$contract['schema']??null;
@@ -85,8 +92,8 @@ function lac_agent_output_contract_issues(string $content,array $contract): arra
   if(is_string($type)&&$type!==$actual&& !($type==='integer'&&is_int($v)) && !($type==='number'&&$actual==='number')){$issues[]='OUTPUT_TYPE_MISMATCH at '.$path.': expected '.$type.', got '.$actual.'.';return;}
   if(isset($rule['enum'])&&is_array($rule['enum'])&&!in_array($v,$rule['enum'],true))$issues[]='OUTPUT_ENUM_MISMATCH at '.$path.'.';
   if(is_string($v)){
-   if(isset($rule['minLength'])&&strlen($v)<(int)$rule['minLength'])$issues[]='OUTPUT_STRING_TOO_SHORT at '.$path.'.';
-   if(isset($rule['maxLength'])&&strlen($v)>(int)$rule['maxLength'])$issues[]='OUTPUT_STRING_TOO_LONG at '.$path.'.';
+   if(isset($rule['minLength'])&&lac_agent_schema_string_length($v)<(int)$rule['minLength'])$issues[]='OUTPUT_STRING_TOO_SHORT at '.$path.'.';
+   if(isset($rule['maxLength'])&&lac_agent_schema_string_length($v)>(int)$rule['maxLength'])$issues[]='OUTPUT_STRING_TOO_LONG at '.$path.'.';
   }
   if(is_int($v)||is_float($v)){
    if(isset($rule['minimum'])&&$v<$rule['minimum'])$issues[]='OUTPUT_NUMBER_BELOW_MINIMUM at '.$path.'.';
