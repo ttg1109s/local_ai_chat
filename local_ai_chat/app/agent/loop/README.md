@@ -1,1 +1,0 @@
-Data Packs are never hydrated into model context. The model receives a run-scoped `data_ref` and uses the model-facing `data_access` tool for inspect, pagination, query, aggregation, and verification. Full-payload reference substitution is disabled. 
