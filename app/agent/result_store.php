@@ -371,6 +371,15 @@ function lac_data_pack_cleanup_run(string $runId): array {
     }
    }
   } catch(Throwable $e) {$errors[]='manifest:'.basename($path);}
+  // A manifest can be missing or corrupt after an interrupted build. The canonical
+  // result record establishes run ownership; safely remove any remaining segments
+  // matching this exact Data Pack ID to avoid orphaned disk usage.
+  $packId=basename($path,'.json');$manifestDir=lac_data_pack_manifest_dir();
+  if(preg_match('/^[a-f0-9]{8,64}$/i',$packId))foreach(glob($manifestDir.'/'.$packId.'.*.jsonl')?:[] as $orphan){
+   $name=basename($orphan);
+   if(!preg_match('/^'.preg_quote($packId,'/').'\\.[a-zA-Z0-9_-]+\\.\\d{6}\\.jsonl$/D',$name)||is_link($orphan)||!is_file($orphan))continue;
+   $orphanBytes=(int)(filesize($orphan)?:0);if(@unlink($orphan))$bytes+=$orphanBytes;else $errors[]=$name;
+  }
   $size=(int)(filesize($path)?:strlen($raw));
   if(@unlink($path)){$deleted++;$bytes+=$size;}else{$errors[]=basename($path);}
  }
