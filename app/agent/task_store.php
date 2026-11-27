@@ -61,7 +61,7 @@ function lac_agent_task_save(string $runId,string $state,array $data=[],?string 
  if(in_array($state,['completed','failed','cancelled'],true)&&!$preserveCommittedResults&&function_exists('lac_data_pack_cleanup_enabled')&&lac_data_pack_cleanup_enabled()){
   $researchLedger = dirname(__DIR__, 2) . '/storage/agent-tasks/web-research-' . preg_replace('/[^a-f0-9]/i', '', $runId) . '.json';
   if (is_file($researchLedger)) @unlink($researchLedger);
-  if (is_file($researchLedger . '.lock')) @unlink($researchLedger . '.lock');
+  // Keep the lock inode stable: unlinking lock files can split concurrent lockers across different inodes.
   try{lac_data_pack_cleanup_run($runId);}catch(Throwable $cleanupError){
    if(function_exists('lac_agent_log'))lac_agent_log('data_pack_cleanup_failed',['run_id'=>$runId,'error'=>$cleanupError->getMessage()]);
   }
