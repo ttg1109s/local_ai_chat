@@ -3,12 +3,18 @@ from .common import *
 
 def generate_data_tool(args):
     distribution = args.get("distribution")
-    count = int(args.get("count", 0))
+    raw_count = args.get("count", 0)
+    if isinstance(raw_count, bool) or not isinstance(raw_count, int):
+        raise ValueError("count must be an integer.")
+    count = raw_count
     if distribution not in ("integer", "uniform", "normal"):
         raise ValueError("distribution must be integer, uniform, or normal.")
     if not 1 <= count <= 10000:
         raise ValueError("count must be between 1 and 10,000.")
-    series_count = int(args.get("series_count", 1))
+    raw_series_count = args.get("series_count", 1)
+    if isinstance(raw_series_count, bool) or not isinstance(raw_series_count, int):
+        raise ValueError("series_count must be an integer.")
+    series_count = raw_series_count
     if not 1 <= series_count <= 20:
         raise ValueError("series_count must be between 1 and 20.")
     low = float(args.get("min", 0))
@@ -24,6 +30,8 @@ def generate_data_tool(args):
     if distribution == "normal" and (not math.isfinite(mean) or not math.isfinite(std) or std <= 0):
         raise ValueError("mean must be finite and std must be a finite number greater than 0.")
     base_seed = args.get("seed")
+    if base_seed is not None and (isinstance(base_seed, bool) or not isinstance(base_seed, int)):
+        raise ValueError("seed must be an integer or null.")
     datasets = []
     for index in range(series_count):
         # Derive independent, reproducible streams without repeating a dataset.
