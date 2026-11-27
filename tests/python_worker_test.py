@@ -101,4 +101,9 @@ assert not overflow_uniform['success'] and 'too large to represent safely' in ov
 overflow_normal = run({'action':'generate_data','arguments':{'distribution':'normal','count':3,'mean':1.7e308,'std':1e308,'seed':1}})
 assert not overflow_normal['success'] and 'non-finite value' in overflow_normal['error']
 
+
+# Null values must not satisfy not-equal filters (SQL-like missing-value semantics).
+df_ne = run({'action':'dataframe','arguments':{'operation':'filter','data':[{'name':'Alice'},{'name':None},{'name':'Bob'}],'column':'name','operator':'ne','value':'Alice'}})
+assert df_ne['success'] and df_ne['result']['rows'] == 1 and df_ne['result']['records'][0]['name'] == 'Bob'
+
 print('Python worker tests passed.')
