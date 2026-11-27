@@ -114,8 +114,16 @@ if($model==='')out(['error'=>'No response model selected.'],422);if(preg_match('
    // The generated delta is appended to the existing database/UI message, never shown as a replacement.
    $lastAssistantText='';
    for($i=count($history)-1;$i>=0;$i--){if(($history[$i]['role']??'')==='assistant'){$lastAssistantText=(string)$history[$i]['content'];break;}}
-   $anforr=mb_substr($lastAssistantText,-1200);
-   // Do not append a synthetic user turn: leave the truncated assistant answer as the final context so generation continues from its prefix.
+   // Bound continuation context by replacing the previous assistant turn with its
+   // trailing 1,200 characters. The full response remains in $baseText and is
+   // appended to the newly generated continuation after the model returns.
+   for($historyIndex=count($promptHistory)-1;$historyIndex>=0;$historyIndex--){
+     if(($promptHistory[$historyIndex]['role']??'')==='assistant'){
+       $promptHistory[$historyIndex]['content']=mb_substr($lastAssistantText,-1200);
+       break;
+     }
+   }
+   // Do not append a synthetic user turn: the truncated assistant answer stays final.
  }
  $configuredMaxTokens=(int)$generation['max_tokens'];
  $effectiveMaxTokens=$configuredMaxTokens;
