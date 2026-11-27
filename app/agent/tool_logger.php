@@ -106,17 +106,19 @@ function lac_unified_trace_write(string $event,array $data=[],string $source='sy
  if($json===false)return false;
  $dir=dirname($path);
  if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))return lac_trace_write_failure('directory_create_failed',$path,$seq);
+ $lockPath=$path.'.lock';$lockHandle=@fopen($lockPath,'c');
+ if(!$lockHandle)return lac_trace_write_failure('lock_open_failed',$path,$seq);
  $fh=@fopen($path,'ab');
- if(!$fh)return lac_trace_write_failure('file_open_failed',$path,$seq);
+ if(!$fh){@fclose($lockHandle);return lac_trace_write_failure('file_open_failed',$path,$seq);}
  $ok=false;
- if(@flock($fh,LOCK_EX)){
+ if(@flock($lockHandle,LOCK_EX)){
   @fseek($fh,0,SEEK_END);$start=@ftell($fh);$line=$json.PHP_EOL;$offset=0;$length=strlen($line);
   while($offset<$length){$written=@fwrite($fh,substr($line,$offset));if($written===false||$written===0)break;$offset+=$written;}
   $ok=$offset===$length&&@fflush($fh);
   if(!$ok&&is_int($start)){@ftruncate($fh,$start);@fflush($fh);}
-  @flock($fh,LOCK_UN);
+  @flock($lockHandle,LOCK_UN);
  }else{$ok=false;}
- @fclose($fh);
+ @fclose($fh);@fclose($lockHandle);
  if(!$ok)return lac_trace_write_failure('append_or_flush_failed',$path,$seq);
  $ctx['sequence']=$seq;$GLOBALS['lac_unified_trace_context']=$ctx;
  $GLOBALS['lac_unified_trace_health']=['healthy'=>true,'last_success_at'=>gmdate(DATE_ATOM),'last_error'=>null];
@@ -140,8 +142,13 @@ function lac_unified_trace_cleanup(string $directory,int $retentionDays=7): arra
  foreach(new DirectoryIterator($directory) as $file){
   if($file->isDot()||!$file->isFile()||$file->getExtension()!=='jsonl')continue;
   if($file->getMTime()>=$cutoff)continue;
-  $path=$file->getPathname();$size=$file->getSize();
+  $path=$file->getPathname();$size=$file->getSize();$lockPath=$path.'.lock';$lock=@fopen($lockPath,'c');
+  if(!$lock)continue;
+  if(!@flock($lock,LOCK_EX)){@fclose($lock);continue;}
+  clearstatcache(true,$path);
+  if(!is_file($path)||filemtime($path)>=$cutoff){@flock($lock,LOCK_UN);@fclose($lock);continue;}
   if(@unlink($path)){$deleted++;$bytes+=$size;}
+  @flock($lock,LOCK_UN);@fclose($lock);
  }
  return ['deleted'=>$deleted,'bytes'=>$bytes];
 }
