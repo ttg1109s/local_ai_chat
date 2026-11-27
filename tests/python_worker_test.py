@@ -37,4 +37,15 @@ with tempfile.TemporaryDirectory() as outdir:
 # The non-web worker path must not fail because Path is shadowed by a local import.
 web = run({'action':'generate_data','arguments':{'distribution':'normal','count':8,'mean':50,'std':10,'seed':101}})
 assert web['success'] and len(web['result']['values']) == 8
+
+# Reject generation inputs that previously produced empty randint ranges or non-finite data.
+for invalid_args in (
+    {'distribution':'integer','count':5,'min':1.2,'max':1.8},
+    {'distribution':'uniform','count':5,'min':float('inf'),'max':2},
+    {'distribution':'normal','count':5,'mean':float('nan'),'std':1},
+    {'distribution':'normal','count':5,'mean':0,'std':float('inf')},
+):
+    invalid = run({'action':'generate_data','arguments':invalid_args})
+    assert not invalid['success'], f'Invalid parameters should fail: {invalid_args}'
+
 print('Python worker tests passed.')
