@@ -304,6 +304,7 @@ function lac_tool_dispatch(PDO $pdo,string $name,array $args,array $meta,array $
       'max_chars_per_page'=>20000
     ]],(int)($meta['timeout']??180),$context);
     $pages=is_array($crawl['pages']??null)?$crawl['pages']:[];
+    if(empty($crawl['success'])||!$pages)throw new LacToolException('WEBSITE_CRAWL_FAILED',(string)($crawl['error']??'No pages were successfully crawled.'),(bool)($meta['retryable']??true));
     $evidence=lac_web_normalize_results($pages,['provider'=>'bounded_playwright_crawler','errors'=>$crawl['errors']??[]]);
     $storage=lac_web_source_store($pdo,$evidence['sources']);
     $out=['success'=>true,'site'=>$siteName,'crawl'=>$crawl,'evidence'=>$evidence,'citation_storage'=>$storage];break;
