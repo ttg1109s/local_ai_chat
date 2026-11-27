@@ -66,7 +66,7 @@ PS;
     elseif($key==='qdrant')$url='http://127.0.0.1:6333/readyz';
     elseif($key==='apache')$url='http://127.0.0.1/local_ai_chat/';
     else $url='';
-    if($url!==''){$ch=curl_init($url);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>2,CURLOPT_TIMEOUT=>3]);$body=curl_exec($ch);$code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);$healthy=$body!==false&&$code>=200&&$code<500;}
+    if($url!==''){$ch=curl_init($url);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>2,CURLOPT_TIMEOUT=>3]);$body=curl_exec($ch);$code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);$healthy=$body!==false&&$code>=200&&$code<300;}
     elseif($key==='mariadb')$healthy=((int)($v['pid']??0)>0);
     else $healthy=true;
    }
