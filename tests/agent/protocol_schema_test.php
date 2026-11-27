@@ -34,4 +34,5 @@ $feedback=lac_agent_loop_error_feedback('INVALID_PROTOCOL_FIELDS','protocol_vali
 $retryFeedback=lac_agent_loop_tool_failure_payload(['tool'=>'python_calculate','tool_call_id'=>'calc_retry_1','error_code'=>'TEMPORARY_FAILURE','phenomenon'=>'Temporary failure.','retryable'=>true,'execution_started'=>true],[],1,1);t_eq($retryFeedback['tool_call_id']??null,'calc_retry_1','retry feedback preserves invocation identity');t_eq($retryFeedback['execution_started']??null,true,'retry feedback preserves execution-started state');
 
 $unknown=lac_agent_loop_decode_protocol('{"type":"toolbox_request"}');t_eq($unknown['type']??null,'toolbox_request','retired messages are not normalized to supported types');
+t_eq(lac_schema_strlen('é猫'),2,'schema string length counts Unicode code points');t_eq(lac_schema_strlen('é猫🙂'),3,'schema string length counts supplementary Unicode code points');
 echo "OK: canonical protocol and schema regression tests passed\n";
