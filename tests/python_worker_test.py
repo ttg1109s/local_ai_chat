@@ -48,4 +48,12 @@ for invalid_args in (
     invalid = run({'action':'generate_data','arguments':invalid_args})
     assert not invalid['success'], f'Invalid parameters should fail: {invalid_args}'
 
+
+# DataFrame contains filters must not stringify null values as matching text.
+df_filter = run({'action':'dataframe','arguments':{'operation':'filter','data':[{'name':'Alice'},{'name':None},{'name':'Bob'}],'column':'name','operator':'contains','value':'None'}})
+assert df_filter['success'] and df_filter['result']['rows'] == 0, 'Nulls must not match contains filters after string coercion'
+# Non-count groupby operations require a valid value column.
+df_group = run({'action':'dataframe','arguments':{'operation':'groupby','data':[{'category':'A','amount':1}],'column':'category','aggregation':'sum','value_column':'missing'}})
+assert not df_group['success'] and 'Value column not found' in df_group['error']
+
 print('Python worker tests passed.')
