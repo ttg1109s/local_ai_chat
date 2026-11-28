@@ -54,7 +54,7 @@ test('generation orchestrator completes send stream and cleans state',async()=>{
  class FakeFormData{constructor(){this.values=[]}append(k,v){this.values.push([k,v])}}
  const stream='event: meta\\ndata: {"run_id":"run-1","message_id":10,"model_label":"Model"}\\n\\nevent: delta\\ndata: {"text":"Hello"}\\n\\nevent: usage\\ndata: {"total_tokens":4}\\n\\nevent: done\\ndata: {"stopped":false,"usage":{"total_tokens":4},"finish_reason":"stop","message_id":10}\\n\\n';
  const context={window,console,FormData:FakeFormData,AbortController,TextDecoder,TextEncoder,setInterval:()=>1,clearInterval:()=>{},fetch:async()=>({ok:true,body:{getReader:()=>{let sent=false;return{read:async()=>sent?({done:true}):(sent=true,{done:false,value:new TextEncoder().encode(stream)})}}}}),setTimeout,};
- vm.runInNewContext(sse,context);vm.runInNewContext(events,context);
+ vm.runInNewContext(sse,context);vm.runInNewContext(events,context);vm.runInNewContext(orchestrator,context);
  const prompt={value:'hello',style:{height:'auto'}},model={value:''},web={checked:false},website={checked:false};
  const elapsed={textContent:''},token={textContent:''},continueBtn={hidden:false,disabled:false};
  const tools={querySelector(sel){if(sel==='.token-meta')return token;if(sel==='[data-act=continue]')return continueBtn;return null}};
