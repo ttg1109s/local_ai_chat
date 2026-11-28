@@ -119,10 +119,9 @@ const setAssistantGenerationState=(body,label,state,preparing=false)=>generation
    while(true){
      let part=await reader.read();if(part.done)break;
      buffer+=decoder.decode(part.value,{stream:true});
-     buffer=buffer.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-     let blocks=buffer.split('\n\n');buffer=blocks.pop();
-     for(let block of blocks){
-       let ev=(block.match(/^event:\s*(.+)$/m)||[])[1],data=(block.match(/^data:\s*(.+)$/m)||[])[1];if(!data)continue;
+     const parsed=window.LACChatSSE.parseBuffer(buffer);buffer=parsed.remainder;
+     for(let block of parsed.blocks){
+       const {event:ev,data}=window.LACChatSSE.parseBlock(block);if(!data)continue;
        let obj;try{obj=JSON.parse(data)}catch{continue}
        if(ev==='meta'){
          activeRun=obj.run_id;if(obj.message_id){const traceMessage=assistantBody?.closest('.message');traceMessage?.setAttribute('data-message-id',String(obj.message_id));if(traceMessage)startMessageTrace(traceMessage,Number(obj.message_id));}
