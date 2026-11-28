@@ -13,7 +13,7 @@ foreach($catalog as $tool){
   if(array_key_exists($field,$entry))throw new RuntimeException('Help-only field leaked into catalog: '.$field);
  }
 }
-foreach(['python_analyze_json','python_machine_learning','get_llama_info','get_infrastructure_status','document_extract'] as $removed){if(isset($catalog[$removed]))throw new RuntimeException('Retired tool remains registered: '.$removed);}
+foreach(['python_generate_data','python_analyze_json','python_machine_learning','get_llama_info','get_infrastructure_status','document_extract'] as $removed){if(isset($catalog[$removed]))throw new RuntimeException('Retired tool remains registered: '.$removed);}
 foreach(['data_access','verify_result'] as $system){if(empty($catalog[$system]['internal'])||empty($catalog[$system]['system_tool']))throw new RuntimeException('System tool must be internal and Runtime-managed: '.$system);}
 $search=$catalog['search_web'];
 $helpDescription=$search['description'];
