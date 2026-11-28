@@ -10,8 +10,14 @@ if($end===false)throw new RuntimeException('Could not isolate python_output rout
 $route=substr($source,$start,$end-$start);
 $referenceLookup=strpos($route, 'SELECT DISTINCT c.id,c.password_hash FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE LOCATE(?,m.content)>0');
 $notFoundCheck=strpos($route, 'if(!$refs){http_response_code(404);exit;}');
-$lockCheck=strpos($route, "if(!empty($ref['password_hash'])&&!in_array((int)$ref['id'],$unlockedIds,true)){http_response_code(423);exit;}");
-$fileRead=strpos($route, "$path=LAC_ROOT.'/storage/python_outputs/'.$file;");
+$lockCheck=strpos($route, <<<'CHECK'
+if(!empty($ref['password_hash'])&&!in_array((int)$ref['id'],$unlockedIds,true)){http_response_code(423);exit;}
+CHECK
+);
+$fileRead=strpos($route, <<<'READ'
+$path=LAC_ROOT.'/storage/python_outputs/'.$file;
+READ
+);
 if($referenceLookup===false||$notFoundCheck===false||$lockCheck===false||$fileRead===false||!($referenceLookup<$fileRead&&$notFoundCheck<$fileRead&&$lockCheck<$fileRead)){
  throw new RuntimeException('Generated chart serving must resolve message ownership and enforce conversation unlock before reading file.');
 }
