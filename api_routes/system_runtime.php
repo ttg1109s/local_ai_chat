@@ -67,8 +67,15 @@ if($action==='artifact_delete'){
 }
 
 if($action==='python_output'){
- $file=(string)($_GET['file']??'');
- if(!preg_match('/^chart_[a-f0-9]{32}\.(?:jpg|png)$/D',$file)){http_response_code(404);exit;}
+ $file=strtolower((string)($_GET['file']??''));
+ if(!preg_match('/^chart_[a-f0-9]{32}\\.(?:jpg|png)$/D',$file)){http_response_code(404);exit;}
+ // Chart filenames are unguessable identifiers, not authorization tokens.
+ // Resolve every message reference and enforce each owning conversation's lock.
+ $owners=$pdo->prepare('SELECT DISTINCT c.id,c.password_hash FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE LOCATE(?,m.content)>0');
+ $owners->execute([$file]);$refs=$owners->fetchAll();
+ if(!$refs){http_response_code(404);exit;}
+ $unlockedIds=array_map('intval',$_SESSION['conversation_unlocks']??[]);
+ foreach($refs as $ref){if(!empty($ref['password_hash'])&&!in_array((int)$ref['id'],$unlockedIds,true)){http_response_code(423);exit;}}
  $path=LAC_ROOT.'/storage/python_outputs/'.$file;
  if(!is_file($path)||is_link($path)){http_response_code(404);exit;}
  $size=@filesize($path);if(!$size||$size>25*1024*1024){http_response_code(404);exit;}
@@ -76,7 +83,7 @@ if($action==='python_output'){
  $imageInfo=@getimagesize($path);if(!is_array($imageInfo)||($imageInfo['mime']??'')!==$expectedMime){http_response_code(404);exit;}
  header('Content-Type: '.$expectedMime);
  header('X-Content-Type-Options: nosniff');
- header('Cache-Control: private, max-age=3600');
+ header('Cache-Control: private, no-store');
  header('Content-Disposition: inline; filename="'.$file.'"');
  header('Content-Length: '.filesize($path));
  readfile($path);exit;
