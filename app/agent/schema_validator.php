@@ -70,7 +70,27 @@ function lac_tool_validate_arguments(string $name,array $args,array $meta): arra
  $schema=$meta['schema']??['type'=>'object','properties'=>[]];
  $errors=lac_schema_validate_value($args,$schema);
  if($name==='manage_websites'&&($args['action']??'')==='read'&&(!isset($args['site'])||!is_string($args['site'])||trim($args['site'])===''))$errors[]='arguments.site is required and must be a non-empty string when action=read.';
- if($name==='python_generate_data'&&in_array(($args['distribution']??''),['integer','uniform'],true)&&isset($args['min'],$args['max'])&&$args['min']>=$args['max'])$errors[]='arguments.min must be less than arguments.max for integer or uniform distributions.';
+ if($name==='python_generate_number'){
+  $distribution=(string)($args['distribution']??'');
+  $shape=(string)($args['shape']??'vector');
+  $numberType=(string)($args['number_type']??($distribution==='binary'||$distribution==='integer'?'integer':'float'));
+  if($distribution==='binary'&&$numberType!=='integer')$errors[]='arguments.number_type must be integer for binary distribution.';
+  if($shape==='vector'){
+   $count=$args['count']??10;
+   if(!is_int($count)||$count<1||$count>10000)$errors[]='arguments.count must be an integer from 1 to 10,000 for vector shape.';
+   if(array_key_exists('rows',$args)||array_key_exists('columns',$args))$errors[]='arguments.rows and columns are only valid when shape=matrix.';
+  }elseif($shape==='matrix'){
+   $rows=$args['rows']??null;$columns=$args['columns']??null;
+   if(!is_int($rows)||!is_int($columns)||$rows<1||$columns<1)$errors[]='arguments.rows and columns are required positive integers for matrix shape.';
+   elseif($rows*$columns>10000)$errors[]='arguments.rows*columns must not exceed 10,000 values.';
+   if(array_key_exists('count',$args))$errors[]='arguments.count is only valid when shape=vector.';
+  }
+  if(in_array($distribution,['integer','uniform'],true)&&isset($args['min'],$args['max'])&&$args['min']>=$args['max'])$errors[]='arguments.min must be less than arguments.max for integer or uniform distributions.';
+  if($distribution==='integer'&&isset($args['min'],$args['max'])&&ceil($args['min'])>floor($args['max']))$errors[]='arguments.min and max must include at least one integer.';
+  if($distribution==='uniform'&&$numberType==='integer'&&isset($args['min'],$args['max'])&&ceil($args['min'])>floor($args['max']))$errors[]='arguments.min and max must include at least one integer for integer output.';
+  if($distribution==='normal'&&isset($args['mean'])&&!is_finite((float)$args['mean']))$errors[]='arguments.mean must be finite.';
+  if(array_key_exists('probability',$args)&&$distribution!=='binary')$errors[]='arguments.probability is only valid for binary distribution.';
+ }
  if($name==='python_dataframe'){
   $operation=(string)($args['operation']??'profile');
   if(in_array($operation,['filter','groupby'],true)&&(!isset($args['column'])||!is_string($args['column'])||trim($args['column'])===''))$errors[]='arguments.column is required for filter and groupby operations.';
