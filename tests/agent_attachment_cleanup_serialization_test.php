@@ -12,4 +12,4 @@ foreach(['lac_attachment_cleanup_message','lac_attachment_cleanup_conversation',
  $body=substr($source,$start,1000);
  if(!str_contains($body,'lac_attachment_mutation_lock()')||!str_contains($body,'lac_attachment_mutation_unlock($lock)'))throw new RuntimeException($fn.' must lock and unlock the shared mutation mutex.');
 }
-echo "agent_attachment_cleanup_serialization_test: PASS\\n";
+echo "agent_attachment_cleanup_serialization_test: PASS\n";
