@@ -116,7 +116,7 @@ function lac_tool_catalog(): array {
     ['expression'=>'A','mode'=>'matrix','matrix'=>[[1,2],[3,4]],'matrix_operation'=>'rref']
    ]
   ],
-  '  'python_generate_number'=>[
+  'python_generate_number'=>[
    'when'=>'Use for numeric-only data generation. operation=random generates numeric distributions and vectors/matrices; operation=sequence creates deterministic numeric sequences; operation=sampling samples numeric populations, optionally weighted or without replacement, or shuffles/permutates; operation=transform applies numeric transforms to existing values. Omit operation for backward-compatible random generation.',
    'avoid'=>'This tool only handles numeric values, not text, categories, dates, or records. Do not use to analyze data. Use operation-specific parameters for sequence, sampling, and transform.',
    'examples'=>[
@@ -237,7 +237,7 @@ python_statistics'=>[
    ['id'=>'DATAFRAME_GROUPBY_VALUE_COLUMN','stage'=>'semantic','description'=>'For groupby aggregations other than count, provide value_column.','fields'=>['operation','aggregation','value_column']]
   ],
   '  'python_generate_number'=>[
-   ['id'=>'GENERATED_NUMBER_PARAMETERS','stage'=>'semantic','description'=>'Operation-specific numeric parameters must be valid; random distributions, vectors/matrices, deterministic sequences, sampling, and transforms are validated separately.','fields'=>['distribution','shape','count','rows','columns','min','max','mean','std','probability','number_type']]
+   ['id'=>'GENERATED_NUMBER_PARAMETERS','stage'=>'semantic','description'=>'Operation-specific numeric parameters must be valid; random distributions, vectors/matrices, deterministic sequences, sampling, and transforms are validated separately.','fields'=>['operation','distribution','shape','count','rows','columns','min','max','mean','std','probability','trials','lambda','scale','alpha','beta','mode','number_type','sequence_type','start','stop','step','ratio','base','first','second','coefficients','population','weights','replace','sampling_method','values','transform_type','factor','offset','digits','target_min','target_max']]
   ],
 python_statistics'=>[
    ['id'=>'STATISTICS_METHOD_INPUTS','stage'=>'semantic','description'=>'Required values, y, groups, expected, or population_mean depend on method; provide the inputs required by the selected method.','fields'=>['method','values','y','groups','expected','population_mean']]
