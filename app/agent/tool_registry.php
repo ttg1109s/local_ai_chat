@@ -117,8 +117,8 @@ function lac_tool_catalog(): array {
    ]
   ],
   '  'python_generate_number'=>[
-   'when'=>'Use for random numeric generation, including vectors, matrices, binary 0/1 data, integers, or floating-point values. Use shape=matrix with rows and columns for matrix output. Use series_count for multiple independent datasets; seed for reproducibility.',
-   'avoid'=>'Do not use to analyze existing data. Binary distribution generates 0/1 with probability controlling the chance of 1. Integer distribution uses inclusive min/max. Uniform and normal default to floating-point unless number_type=integer is specified.',
+   'when'=>'Use for numeric-only data generation. operation=random generates numeric distributions and vectors/matrices; operation=sequence creates deterministic numeric sequences; operation=sampling samples numeric populations, optionally weighted or without replacement, or shuffles/permutates; operation=transform applies numeric transforms to existing values. Omit operation for backward-compatible random generation.',
+   'avoid'=>'This tool only handles numeric values, not text, categories, dates, or records. Do not use to analyze data. Use operation-specific parameters for sequence, sampling, and transform.',
    'examples'=>[
     ['distribution'=>'integer','count'=>20,'min'=>1,'max'=>100,'seed'=>42],
     ['distribution'=>'uniform','count'=>50,'min'=>0,'max'=>1,'number_type'=>'float','seed'=>42],
