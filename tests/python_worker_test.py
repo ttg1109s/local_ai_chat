@@ -170,3 +170,6 @@ standardized=run({'action':'generate_number','arguments':{'operation':'transform
 assert standardized['success'] and abs(sum(standardized['result']['values']))<1e-12
 clipped=run({'action':'generate_number','arguments':{'operation':'transform','transform_type':'clip','values':[-2,1,9],'min':0,'max':5}})
 assert clipped['success'] and clipped['result']['values']==[0.0,1.0,5.0]
+
+rounded=run({'action':'generate_number','arguments':{'distribution':'beta','count':30,'alpha':2,'beta':5,'number_type':'integer','seed':12}})
+assert rounded['success'] and all(isinstance(v,int) for v in rounded['result']['values'])
