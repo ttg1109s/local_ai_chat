@@ -10,16 +10,13 @@ function lac_python_chart_files(string $content): array {
 function lac_cleanup_unreferenced_python_charts(PDO $pdo,array $files): array {
  $deleted=[];$kept=[];$check=$pdo->prepare('SELECT 1 FROM messages WHERE LOCATE(?,content)>0 LIMIT 1');
  foreach(array_unique($files) as $file){
-  if(!preg_match('/^chart_[a-f0-9]{32}\.(?:jpg|png)$/D',$file))continue;
+  if(!preg_match('/^chart_[a-f0-9]{32}\\.(?:jpg|png)$/D',$file))continue;
   $check->execute([$file]);
   if($check->fetchColumn()){$kept[]=$file;continue;}
-  $refQ=$pdo->prepare('SELECT DISTINCT c.id,c.password_hash FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE m.content LIKE ?');
- $refQ->execute(['%'.$file.'%']);$refs=$refQ->fetchAll();
- if(!$refs){http_response_code(404);exit;}
- $unlockedIds=array_map('intval',$_SESSION['conversation_unlocks']??[]);
- foreach($refs as $ref){if(!empty($ref['password_hash'])&&!in_array((int)$ref['id'],$unlockedIds,true)){http_response_code(423);exit;}}
- $path=LAC_ROOT.'/storage/python_outputs/'.$file;
-  if(is_file($path)){if(@unlink($path))$deleted[]=$file;else error_log('Python chart cleanup failed: '.$file);}
+  // No remaining message references this chart. Authorization belongs to the user-facing
+  // delete route before the reference is removed; cleanup must be able to remove orphans.
+  $path=LAC_ROOT.'/storage/python_outputs/'.$file;
+  if(is_file($path)&&!is_link($path)){if(@unlink($path))$deleted[]=$file;else error_log('Python chart cleanup failed: '.$file);}
  }
  return ['deleted'=>$deleted,'kept'=>$kept];
 }
