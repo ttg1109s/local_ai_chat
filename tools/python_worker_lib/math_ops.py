@@ -161,6 +161,7 @@ def _convert_data(args):
     """Safe data conversions: bases, encodings, units, timestamps, and structured text."""
     import base64, csv, io, json, urllib.parse, datetime
     category=str(args.get("conversion_type","")).lower()
+    if category=="astronomy": return _astronomy_convert(args)
     value=args.get("value")
     if category in ("number_base","base","numeric_base"):
         if isinstance(value,bool): raise ValueError("value must be a number or integer string.")
@@ -301,7 +302,7 @@ def _astronomy_convert(args):
         lon*=factor[unit]; lat*=factor[unit]
         if not -90<=lat<=90: raise ValueError("Latitude/declination must be between -90 and 90 degrees.")
         if frame_a==frame_b: return {"longitude":lon,"latitude":lat,"frame":frame_b,"unit":"deg"}
-        if {frame_a,frame_b} not in ({"icrs","galactic"},{"icrs","ecliptic"}): raise ValueError("Supported coordinate transforms: ICRS↔Galactic and ICRS↔Ecliptic (J2000 approximate).")
+        if not ((frame_a=="icrs" and frame_b in ("galactic","ecliptic")) or (frame_b=="icrs" and frame_a in ("galactic","ecliptic"))): raise ValueError("Supported coordinate transforms: ICRS↔Galactic and ICRS↔Ecliptic (J2000 approximate).")
         r=math.radians(lon); d=math.radians(lat)
         if frame_a=="icrs" and frame_b=="galactic":
             # IAU J2000 rotation matrix ICRS -> Galactic.
