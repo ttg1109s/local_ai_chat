@@ -2164,8 +2164,10 @@ def _evaluate_formula(expression, values):
             if isinstance(node.op, ast.UAdd): return val
             if isinstance(node.op, ast.USub): return -val
             raise ValueError("Unsupported unary formula operator.")
+        if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "math" and node.attr == "pi":
+            return math.pi
         if isinstance(node, ast.Call) and not node.keywords:
-            args = [visit(a) for a in node.args]
+            args = [visit(a) for a in node.args
             funcs = {"abs":abs,"max":max,"min":min,"math.sqrt":math.sqrt,"math.sin":math.sin,"math.cos":math.cos,"math.asin":math.asin,"math.log":math.log,"math.log10":math.log10}
             name = node.func.id if isinstance(node.func, ast.Name) else (node.func.value.id+"."+node.func.attr if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name) else None)
             if name not in funcs:
