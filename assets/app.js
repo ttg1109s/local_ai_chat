@@ -6,36 +6,11 @@ const {typesetMath}=window.LACChatRender;
 const {md,esc}=window.LACChatMarkdown;
 let currentModelAlias='',generationModelLabel='Model';function modelLabel(){return generationModelLabel||currentModelAlias||'Model'}
 window.LACChatGenerationUI.init({$: $,getAlias:()=>currentModelAlias,getSelectedModel:selectedModelDisplay});
-window.LACChatMessageUI.init({$: $,md,typeset:typesetMath,formatHMS,toggleTrace:toggleMessageTrace,ensureTrace:ensureMessageTrace,attachmentRender:(node,items)=>window.LACAttachmentUI.renderMessage(node,items),toast,generate,isGenerating:()=>!!controller,getLastAssistant:()=>lastAssistant,setLastAssistant:value=>{lastAssistant=value},hidePreviousContinue:hidePreviousContinueActions,syncActions:syncAssistantActions});
 const {formatHMS,traceDuration,traceStamp,traceLabel,traceSourceLabel,traceLineText}=window.LACChatTraceUtils;
 window.LACChatTraceUI.init(()=>current);
 const {ensureMessageTrace,renderMessageTrace,showTraceEventDetail,startMessageTrace,toggleMessageTrace}=window.LACChatTraceUI;
-const addMessage=(role,text,opts={})=>window.LACChatMessageUI.addMessage(role,text,opts);){
- if(role==='user'){hidePreviousContinueActions();syncAssistantActions(true);}
- const d=document.createElement('article');d.className='message '+role;d.dataset.role=role;
- if(opts.message_id)d.dataset.messageId=String(opts.message_id);
- const body=document.createElement('div');body.className='message-content';body.innerHTML=md(text);d.append(body);$('#messages').append(d);typesetMath(body);
- if(role==='assistant'){
-  if(opts.running)d.classList.add('is-generating');
-  if(Array.isArray(opts.attachments)&&opts.attachments.length&&window.LACAttachmentUI)window.LACAttachmentUI.renderMessage(d,opts.attachments);
-  const status=document.createElement('div');status.className='model-status';status.title='Expand / collapse log';status.style.cursor='pointer';
-  status.addEventListener('click',()=>toggleMessageTrace(d));
-  status.innerHTML='<span class="model-state"></span><span class="generation-hint" hidden>Preparing response…</span><span class="elapsed">00:00:00</span>';
-  status.querySelector('.model-state').textContent=opts.model_label?(opts.model_label+(opts.status_label?' · '+opts.status_label:'')):'';status.querySelector('.elapsed').textContent=formatHMS((Number(opts.elapsed_seconds)||0)*1000);
-  ensureMessageTrace(d);
-  const tools=document.createElement('div');tools.className='message-tools';
-  tools.innerHTML='<button data-act="copy" title="Copy" aria-label="Copy"><span class="material-icons-round">content_copy</span></button><button data-act="regenerate" title="Regenerate" aria-label="Regenerate"><span class="material-icons-round">refresh</span></button><button data-act="continue" title="Continue" aria-label="Continue" hidden><span class="material-icons-round">play_arrow</span></button><span class="token-meta"></span>';
-  const bottom=document.createElement('div');bottom.className='message-meta-bottom';bottom.append(status,tools);d.append(bottom);
-  tools.querySelector('[data-act=copy]').onclick=()=>{navigator.clipboard?.writeText(body.innerText);toast('Copied')};
-  tools.querySelector('[data-act=regenerate]').onclick=()=>generate('regenerate');
-  tools.querySelector('[data-act=continue]').onclick=()=>{const b=tools.querySelector('[data-act=continue]');if(b.hidden||controller)return;b.hidden=true;b.disabled=true;generate('continue').finally(()=>{b.disabled=false})};
-  if(opts.continue)tools.querySelector('[data-act=continue]').hidden=false;
-  if(opts.usage)tools.querySelector('.token-meta').textContent='Tokens: '+(opts.usage.total_tokens??'No metrics');
-  else if(opts.token_count!==null&&opts.token_count!==undefined)tools.querySelector('.token-meta').textContent='Tokens: '+opts.token_count;
-  d.querySelector('[data-act="regenerate"]').hidden=true;lastAssistant=d;
- }
- $('#messages').scrollTop=$('#messages').scrollHeight;return body;
-}
+window.LACChatMessageUI.init({$: $,md,typeset:typesetMath,formatHMS,toggleTrace:toggleMessageTrace,ensureTrace:ensureMessageTrace,attachmentRender:(node,items)=>window.LACAttachmentUI.renderMessage(node,items),notify:toast,generate,isGenerating:()=>!!controller,setLastAssistant:value=>{lastAssistant=value},hidePreviousContinue:hidePreviousContinueActions,syncActions:syncAssistantActions});
+const addMessage=(role,text,opts={})=>window.LACChatMessageUI.addMessage(role,text,opts);
 const generationUI=window.LACChatGenerationUI;
 const syncAssistantActions=(generating=false)=>generationUI.syncAssistantActions(generating);const hidePreviousContinueActions=()=>generationUI.hidePreviousContinueActions();async function loadHistory(){return window.LACChatHistoryUI.loadHistory();}
 let recoveryTimer=null,recoveryBusy=false,recoveredGeneration=false,recoveredElapsedBase=0,recoveredElapsedAt=0,recoveredStream=null,recoveredStreamMessageId=0;
