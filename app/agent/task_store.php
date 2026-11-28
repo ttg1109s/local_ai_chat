@@ -30,7 +30,7 @@ function lac_agent_task_save(string $runId,string $state,array $data=[],?string 
   if($from!==''&&!in_array($state,$allowed[$from]??[$from],true))throw new RuntimeException("Invalid task state transition: $from -> $state");
   $history=$old['state_history']??[];
   if($from!==$state)$history[]=['state'=>$state,'at'=>date(DATE_ATOM)];
-  $safe=['task_id'=>$runId,'run_id'=>$runId,'state'=>$state,'state_history'=>$history,'created_at'=>$old['created_at']??date(DATE_ATOM),'updated_at'=>date(DATE_ATOM),'started_at'=>$data['started_at']??$old['started_at']??null,
+  $safe=['task_id'=>$runId,'run_id'=>$runId,'conversation_id'=>isset($data['conversation_id'])?(int)$data['conversation_id']:(int)($old['conversation_id']??0),'state'=>$state,'state_history'=>$history,'created_at'=>$old['created_at']??date(DATE_ATOM),'updated_at'=>date(DATE_ATOM),'started_at'=>$data['started_at']??$old['started_at']??null,
    'step_count'=>(int)($data['step_count']??0),'tool_call_count'=>(int)($data['tool_call_count']??0),
    'completed_tool_count'=>(int)($data['completed_tool_count']??0),'failed_tool_count'=>(int)($data['failed_tool_count']??0),
    'available_tools'=>$data['available_tools']??[],'last_tool'=>$data['last_tool']??null,'last_error_code'=>$data['last_error_code']??null,
