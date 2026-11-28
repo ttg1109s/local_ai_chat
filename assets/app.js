@@ -123,31 +123,9 @@ const setAssistantGenerationState=(body,label,state,preparing=false)=>generation
      for(let block of parsed.blocks){
        const {event:ev,data}=window.LACChatSSE.parseBlock(block);if(!data)continue;
        let obj;try{obj=JSON.parse(data)}catch{continue}
-       if(ev==='meta'){
-         activeRun=obj.run_id;if(obj.message_id){const traceMessage=assistantBody?.closest('.message');traceMessage?.setAttribute('data-message-id',String(obj.message_id));if(traceMessage)startMessageTrace(traceMessage,Number(obj.message_id));}
-         generationModelLabel=(obj.model_label&&String(obj.model_label).trim())?String(obj.model_label).trim():(generationModelLabel||currentModelAlias||'Model');
-         setAssistantGenerationState(assistantBody,generationModelLabel,'preparing',true);
-         if(pendingStop)post('stop_generation',{run_id:activeRun}).catch(()=>{});
-       }else if(ev==='clear_delta'){
-         full='';
-         assistantBody.innerHTML=md(baseText);
-         setAssistantGenerationState(assistantBody,generationModelLabel,'preparing',true);
-       }else if(ev==='delta'){
-         setAssistantGenerationState(assistantBody,generationModelLabel,'typing',false);
-         full+=obj.text;
-         assistantBody.innerHTML=md(baseText+full);
-         $('#messages').scrollTop=$('#messages').scrollHeight;
-       }else if(ev==='approval_required'){
-         const pending=Array.isArray(obj.pending)?obj.pending:(obj.pending?[obj.pending]:[]);
-         const first=pending[0]||{};
-         const detail=(first.tool||'action')+' · '+(first.required_approvals||first.risks||[]).join(', ')+' · arguments='+JSON.stringify(first.arguments||{}).slice(0,700);
-         const approved=window.confirm('The Agent completed the safe steps. Approval is required before this action: '+detail+'.\n\nApprove this action?');
-         if(approved){try{const result=await post('agent_task_approve',{run_id:obj.run_id||activeRun});toast(result.state==='waiting_approval'?'Approved step executed; another action still requires approval.':'Task resumed.');}catch(e){toast('Could not resume task: '+e.message);}}
-         else {try{await post('agent_task_reject',{run_id:obj.run_id||activeRun});toast('Action rejected; task stopped.');}catch(e){toast('Could not record rejection: '+e.message);}}
-       }else if(ev==='tool_start'||ev==='tool_result'||ev==='tool_error'){/* Tool activity remains in runtime traces; do not render per-message tool boxes. */}else if(ev==='usage')usage=obj;
-       else if(ev==='finish')finishReason=obj.reason;
-       else if(ev==='error')throw Error(obj.message||'Model error');
-       else if(ev==='done'){stopped=!!obj.stopped;usage=obj.usage||usage;finishReason=obj.finish_reason||finishReason;assistantMessageId=Number(obj.message_id)||0}
+       const eventContext={assistantBody,baseText,full,usage,finishReason,stopped,assistantMessageId,activeRun,pendingStop,generationModelLabel,currentModelAlias};
+       await window.LACChatGenerationEvents.handle(ev,obj,eventContext);
+       ({full,usage,finishReason,stopped,assistantMessageId,activeRun,generationModelLabel}=eventContext);
      }
    }
    if(assistantBody){
