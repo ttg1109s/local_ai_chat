@@ -185,3 +185,17 @@ matmul=run({'action':'calculate','arguments':{'expression':'0','mode':'matrix','
 assert matmul['success'] and '19' in matmul['result']['result'] and '22' in matmul['result']['result']
 matpower=run({'action':'calculate','arguments':{'expression':'0','mode':'matrix','matrix':[[1,2],[3,4]],'matrix_operation':'power','matrix_power':2}})
 assert matpower['success'] and '7' in matpower['result']['result'] and '10' in matpower['result']['result']
+
+# Data conversion modes: bases, encoding, units, timestamp and JSON/CSV.
+base=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'number_base','value':'255','from_base':10,'to_base':16}})
+assert base['success'] and base['result']['result']['converted']=='ff'
+b64=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'encoding','operation':'encode','encoding':'base64','value':'hello'}})
+assert b64['success'] and b64['result']['result']['converted']=='aGVsbG8='
+unit=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'unit','value':1,'from_unit':'km','to_unit':'m'}})
+assert unit['success'] and unit['result']['result']['converted']==1000
+temp=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'unit','value':32,'from_unit':'f','to_unit':'c'}})
+assert temp['success'] and abs(temp['result']['result']['converted'])<1e-10
+timestamp=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'timestamp','operation':'to_timestamp','timestamp_unit':'seconds','value':'1970-01-01T00:00:00Z'}})
+assert timestamp['success'] and timestamp['result']['result']['converted']==0
+csvout=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'json_csv','operation':'json_to_csv','value':[{'a':1,'b':'x'},{'a':2,'b':'y'}]}})
+assert csvout['success'] and 'a,b' in csvout['result']['result']['converted']
