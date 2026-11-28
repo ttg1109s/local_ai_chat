@@ -158,7 +158,7 @@ function lac_tool_execute_managed_locked(PDO $pdo,string $name,array $args,array
   if(is_array($raw)){$raw['result_reference']=$ref;$raw['execution_id']=$cached['execution_id']??null;$raw['tool_call_id']=$toolCallId;$raw['cached']=true;return $raw;}
   return ['ok'=>false,'tool'=>$name,'tool_call_id'=>$toolCallId,'error_code'=>'RESULT_EXPIRED','error'=>'The Job result has been released; the Data Pack cannot be replayed.','retryable'=>false];
  }
- if(in_array($existing['state']??'', ['DISPATCHED','EXECUTING','RESULT_RECEIVED'],true)){
+ if(in_array($existing['state']??'', ['DISPATCHED','EXECUTING','RESULT_RECEIVED','UNKNOWN'],true)){
   return ['ok'=>false,'tool'=>$name,'tool_call_id'=>$toolCallId,'error_code'=>'EXECUTION_OUTCOME_UNKNOWN','error'=>'A command with this tool_call_id has an unknown state. Reconcile it before retrying.','retryable'=>false];
  }
  if(($existing['state']??'')==='FAILED' && (empty($meta['idempotent']) || empty($existing['retryable']) || (int)($meta['retry_policy']['max_attempts']??1)<=(int)($existing['attempt']??1))){
