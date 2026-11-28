@@ -1,6 +1,13 @@
 <?php
 /** Durable attachment descriptors. Binary bytes live in Artifact/Data Pack storage, never here. */
 function lac_attachment_store_dir(): string {return dirname(__DIR__,2).'/storage/attachments';}
+/** Serialize descriptor registration and owner cleanup to avoid cleanup/register races. */
+function lac_attachment_mutation_lock() {
+ $dir=lac_attachment_store_dir();if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('ATTACHMENT_STORE_CREATE_FAILED');
+ $fp=@fopen($dir.'/.attachment-manager.lock','c');if(!$fp||!flock($fp,LOCK_EX)){if($fp)fclose($fp);throw new RuntimeException('ATTACHMENT_STORE_LOCK_FAILED');}return $fp;
+}
+function lac_attachment_mutation_unlock($fp): void {if(is_resource($fp)){flock($fp,LOCK_UN);fclose($fp);}}
+
 function lac_attachment_presentations(): array {return ['data_table','chart','image','document','json_viewer','code','sources','evidence','math','model_report','media','file'];}
 function lac_attachment_detect_presentation(string $mime,string $format,string $type=''): string {
  $mime=strtolower($mime);$format=strtolower($format);
@@ -20,9 +27,11 @@ function lac_attachment_register(array $item,array $policy=[]): array {
  if(!in_array($presentation,lac_attachment_presentations(),true))$presentation='file';
  $record=['schema_version'=>2,'attachment_id'=>$id,'conversation_id'=>(string)($item['conversation_id']??''),'message_id'=>(string)($item['message_id']??''),'run_id'=>isset($item['run_id'])?(string)$item['run_id']:null,'execution_id'=>isset($item['execution_id'])?(string)$item['execution_id']:null,'tool'=>(string)($item['tool']??''),'source_type'=>$type,'source_ref'=>$ref,'artifact_ref'=>isset($item['artifact_ref'])?(string)$item['artifact_ref']:null,'presentation'=>$presentation,'result_type'=>$typeHint,'format'=>$format,'title'=>substr(trim((string)($item['title']??'Attachment')),0,180),'mime_type'=>$mime,'size_bytes'=>max(0,(int)($item['size_bytes']??0)),'sha256'=>isset($item['sha256'])?(string)$item['sha256']:null,'provenance'=>is_array($item['provenance']??null)?$item['provenance']:[],'visibility'=>($item['visibility']??'user')==='user'?'user':'internal','status'=>'registered','version'=>max(1,(int)($item['version']??1)),'created_at'=>date(DATE_ATOM)];
  if($record['conversation_id']===''||($record['message_id']===''&&$record['run_id']===null&&$record['execution_id']===null))throw new InvalidArgumentException('ATTACHMENT_OWNER_REQUIRED');
- $dir=lac_attachment_store_dir();if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('ATTACHMENT_STORE_CREATE_FAILED');
- $path=$dir.'/'.$id.'.json';$json=json_encode($record,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT);$tmp=$path.'.'.bin2hex(random_bytes(4)).'.tmp';
- if($json===false||file_put_contents($tmp,$json,LOCK_EX)===false||!rename($tmp,$path)){@unlink($tmp);throw new RuntimeException('ATTACHMENT_COMMIT_FAILED');}return $record;
+ $lock=lac_attachment_mutation_lock();try{
+  $dir=lac_attachment_store_dir();$path=$dir.'/'.$id.'.json';$json=json_encode($record,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT);$tmp=$path.'.'.bin2hex(random_bytes(4)).'.tmp';
+  if($json===false||file_put_contents($tmp,$json,LOCK_EX)===false||!rename($tmp,$path)){@unlink($tmp);throw new RuntimeException('ATTACHMENT_COMMIT_FAILED');}
+  return $record;
+ }finally{lac_attachment_mutation_unlock($lock);}
 }
 function lac_attachment_get(string $id,?string $conversationId=null,?string $messageId=null): ?array {
  if(!preg_match('/^att_[a-f0-9]{24}$/',$id))return null;$path=lac_attachment_store_dir().'/'.$id.'.json';if(!is_file($path)||is_link($path))return null;$v=json_decode((string)file_get_contents($path),true);if(!is_array($v))return null;
