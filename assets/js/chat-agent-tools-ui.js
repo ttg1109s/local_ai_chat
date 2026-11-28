@@ -9,5 +9,5 @@ async function loadAgentTools(){try{const [r,p]=await Promise.all([fetch('api.ph
 
 
 function bind(){ $('#toolPanelToggle')?.addEventListener('click',()=>{const p=$('#toolPermissionPanel'),open=p.hidden;p.hidden=!open;$('#toolPanelToggle').setAttribute('aria-expanded',String(open));});$('#toolReset')?.addEventListener('click',()=>{enabledAgentTools.clear();renderAgentTools();});loadAgentTools();}
-window.LACChatAgentToolsUI={bind,getEnabledAgentTools,saveAgentTools};
+window.LACChatAgentToolsUI={bind,getEnabledAgentTools,saveAgentTools,getSavePromise:()=>agentToolsSavePromise};
 })();
