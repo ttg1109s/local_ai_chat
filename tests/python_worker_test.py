@@ -199,3 +199,17 @@ timestamp=run({'action':'calculate','arguments':{'mode':'convert','conversion_ty
 assert timestamp['success'] and timestamp['result']['result']['converted']==0
 csvout=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'json_csv','operation':'json_to_csv','value':[{'a':1,'b':'x'},{'a':2,'b':'y'}]}})
 assert csvout['success'] and 'a,b' in csvout['result']['result']['converted']
+
+# Astronomy conversions: distance, parallax, coordinate frame, time and constants.
+astro=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'astronomy','astronomy_operation':'distance','value':1,'from_unit':'au','to_unit':'km'}})
+assert astro['success'] and abs(astro['result']['result']['converted']-149597870.7)<1e-5
+par=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'astronomy','astronomy_operation':'parallax','value':0.5,'from_unit':'arcsec','to_unit':'pc'}})
+assert par['success'] and abs(par['result']['result']['converted']-2)<1e-12
+jd=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'astronomy','astronomy_operation':'time','value':2451545.0,'from_unit':'jd','to_unit':'mjd'}})
+assert jd['success'] and abs(jd['result']['result']['converted']-51544.5)<1e-10
+coord=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'astronomy','astronomy_operation':'coordinate','longitude':10.68458,'latitude':41.26917,'from_frame':'icrs','to_frame':'galactic'}})
+assert coord['success'] and abs(coord['result']['result']['longitude']-121.17424)<1e-4
+phys=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'astronomy','astronomy_operation':'physical_constant','value':1,'from_unit':'solar_mass','to_unit':'kg'}})
+assert phys['success'] and abs(phys['result']['result']['converted']-1.98847e30)<1e24
+fw=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'astronomy','astronomy_operation':'frequency_wavelength','value':1,'from_unit':'ghz','to_unit':'cm'}})
+assert fw['success'] and abs(fw['result']['result']['converted']-29.9792458)<1e-6
