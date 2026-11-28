@@ -4,7 +4,8 @@ window.LACChatHistoryUI.init({getCurrentId:()=>current,openConversation,post,toa
 async function refreshConversationAttachments(){return LACAttachmentUI.refresh(()=>current);}
 const {typesetMath}=window.LACChatRender;
 const {md,esc}=window.LACChatMarkdown;
-let currentModelAlias='',generationModelLabel='Model';function modelLabel(){return generationModelLabel||currentModelAlias||'Model'}\nwindow.LACChatGenerationUI.init({$: $,getAlias:()=>currentModelAlias,getSelectedModel:selectedModelDisplay});
+let currentModelAlias='',generationModelLabel='Model';function modelLabel(){return generationModelLabel||currentModelAlias||'Model'}
+window.LACChatGenerationUI.init({$: $,getAlias:()=>currentModelAlias,getSelectedModel:selectedModelDisplay});
 const {formatHMS,traceDuration,traceStamp,traceLabel,traceSourceLabel,traceLineText}=window.LACChatTraceUtils;
 window.LACChatTraceUI.init(()=>current);
 const {ensureMessageTrace,renderMessageTrace,showTraceEventDetail,startMessageTrace,toggleMessageTrace}=window.LACChatTraceUI;
@@ -34,9 +35,14 @@ function addMessage(role,text,opts={}){
  }
  $('#messages').scrollTop=$('#messages').scrollHeight;return body;
 }
-const generationUI=window.LACChatGenerationUI;\nconst syncAssistantActions=(generating=false)=>generationUI.syncAssistantActions(generating);const hidePreviousContinueActions=()=>generationUI.hidePreviousContinueActions();async function loadHistory(){return window.LACChatHistoryUI.loadHistory();}
-let recoveryTimer=null,recoveryBusy=false,recoveredGeneration=false,recoveredElapsedBase=0,recoveredElapsedAt=0,recoveredStream=null,recoveredStreamMessageId=0;\nwindow.LACChatGenerationRecovery.init({$: $,getCurrent:()=>current,md,typeset:typesetMath,refresh:refreshGenerationSnapshot});\nwindow.LACChatConversationUI.init({$: $,getCurrent:()=>current,setCurrent:id=>{current=id},isGenerating:()=>!!controller,getLastAssistant:()=>lastAssistant,setLastAssistant:value=>{lastAssistant=value},post,stopRecovery,updateToolMode,addMessage,syncAssistantActions,loadHistory,refreshGenerationSnapshot,startRecovery,toast});\nwindow.LACChatConversationUI.init({$: $,getCurrent:()=>current,setCurrent:id=>{current=id},post,stopRecovery,updateToolMode,addMessage,syncAssistantActions,loadHistory,refreshGenerationSnapshot,startRecovery,toast});
-const recoveryUI=window.LACChatGenerationRecovery;\nconst stopRecoveredStream=()=>recoveryUI.stopRecoveredStream();function stopRecovery(){if(recoveryTimer){clearInterval(recoveryTimer);recoveryTimer=null}stopRecoveredStream();recoveryBusy=false;recoveredGeneration=false;recoveredElapsedBase=0;recoveredElapsedAt=0;const p=$('#prompt');if(p)p.disabled=false;const s=$('#send');if(s)s.disabled=false;}
+const generationUI=window.LACChatGenerationUI;
+const syncAssistantActions=(generating=false)=>generationUI.syncAssistantActions(generating);const hidePreviousContinueActions=()=>generationUI.hidePreviousContinueActions();async function loadHistory(){return window.LACChatHistoryUI.loadHistory();}
+let recoveryTimer=null,recoveryBusy=false,recoveredGeneration=false,recoveredElapsedBase=0,recoveredElapsedAt=0,recoveredStream=null,recoveredStreamMessageId=0;
+window.LACChatGenerationRecovery.init({$: $,getCurrent:()=>current,md,typeset:typesetMath,refresh:refreshGenerationSnapshot});
+window.LACChatConversationUI.init({$: $,getCurrent:()=>current,setCurrent:id=>{current=id},isGenerating:()=>!!controller,getLastAssistant:()=>lastAssistant,setLastAssistant:value=>{lastAssistant=value},post,stopRecovery,updateToolMode,addMessage,syncAssistantActions,loadHistory,refreshGenerationSnapshot,startRecovery,toast});
+window.LACChatConversationUI.init({$: $,getCurrent:()=>current,setCurrent:id=>{current=id},post,stopRecovery,updateToolMode,addMessage,syncAssistantActions,loadHistory,refreshGenerationSnapshot,startRecovery,toast});
+const recoveryUI=window.LACChatGenerationRecovery;
+const stopRecoveredStream=()=>recoveryUI.stopRecoveredStream();function stopRecovery(){if(recoveryTimer){clearInterval(recoveryTimer);recoveryTimer=null}stopRecoveredStream();recoveryBusy=false;recoveredGeneration=false;recoveredElapsedBase=0;recoveredElapsedAt=0;const p=$('#prompt');if(p)p.disabled=false;const s=$('#send');if(s)s.disabled=false;}
 const startRecoveredStream=(messageId,body,label)=>recoveryUI.startRecoveredStream(messageId,body,label);async function refreshGenerationSnapshot(){
  if(!current||recoveryBusy||controller)return;recoveryBusy=true;
  try{
