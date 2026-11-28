@@ -5,7 +5,7 @@ $store=file_get_contents(__DIR__.'/../app/agent/task_store.php');
 $runner=file_get_contents(__DIR__.'/../app/agent/loop/runner.php');
 $route=file_get_contents(__DIR__.'/../api_routes/agent.php');
 foreach([$store,$runner,$route] as $source){if(!is_string($source))throw new RuntimeException('Source read failed.');}
-if(!str_contains($store,"'conversation_id'=>isset($data['conversation_id'])")||!str_contains($runner,"\$snapshot['conversation_id']=(int)(\$context['conversation_id']??0)"))throw new RuntimeException('Task ownership must be persisted from the generation context.');
+if(!str_contains($store,"'conversation_id'=>isset(\$data['conversation_id'])")||!str_contains($runner,"\$snapshot['conversation_id']=(int)(\$context['conversation_id']??0)"))throw new RuntimeException('Task ownership must be persisted from the generation context.');
 if(!str_contains($route,'function lac_agent_task_authorized(PDO $pdo,array $task): bool'))throw new RuntimeException('Task authorization helper missing.');
 foreach(['agent_task_status','agent_task_reject','agent_task_approve'] as $action){
  $pos=strpos($route,"if(\$action==='$action')");
