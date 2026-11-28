@@ -315,6 +315,10 @@ function lac_tool_dispatch(PDO $pdo,string $name,array $args,array $meta,array $
    case 'physics_calculate':
     require_once __DIR__.'/physics_calculator.php';
     $out=lac_physics_calculate($args);break;
+   case 'python_unit_converter':
+    $unitArgs=['value'=>$args['value'],'from_unit'=>$args['from_unit'],'to_unit'=>$args['to_unit']];
+    if(array_key_exists('dimension',$args))$unitArgs['dimension']=$args['dimension'];
+    $out=lac_python_runtime(['action'=>'unit_converter','arguments'=>$unitArgs],(int)$meta['timeout'],$context);break;
    case 'python_calculate':
     $expr=trim((string)($args['expression']??''));
     if(preg_match('/^(?:import\s|from\s+\w+\s+import|def\s|class\s|for\s|while\s|print\s*\(|[A-Za-z_]\w*\s*=|\[.*\bfor\b.*\])/s',$expr))throw new InvalidArgumentException('python_calculate accepts one mathematical expression only and does not run Python code. Select an appropriate data/Python tool.');
