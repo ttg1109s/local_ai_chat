@@ -210,6 +210,37 @@ def calculate(args):
         point=args.get("point",0); order=int(args.get("order",6))
         if not 1 <= order <= 30: raise ValueError("order must be between 1 and 30.")
         result=_sympy_result(sp.series(parsed,var,point,order))
+    elif mode in ("numeric_integrate","integrate_numeric"):
+        import scipy.integrate as spi
+        lower=args.get("lower",0); upper=args.get("upper",1)
+        if isinstance(lower,bool) or not isinstance(lower,(int,float)) or isinstance(upper,bool) or not isinstance(upper,(int,float)) or not math.isfinite(float(lower)) or not math.isfinite(float(upper)) or lower>=upper:
+            raise ValueError("numeric integration requires finite lower < upper.")
+        if getattr(parsed,"free_symbols",set())- {var}: raise ValueError("Numeric integration expression must use only the selected variable.")
+        fn=sp.lambdify(var,parsed,modules=["math"])
+        val,error=spi.quad(fn,float(lower),float(upper),limit=200)
+        if not math.isfinite(val): raise ValueError("Numeric integration result is non-finite.")
+        result={"value":float(val),"estimated_error":float(error),"interval":[float(lower),float(upper)]}
+    elif mode in ("optimize","minimize","maximize"):
+        from scipy.optimize import minimize_scalar
+        lower=args.get("lower",-10); upper=args.get("upper",10)
+        if isinstance(lower,bool) or not isinstance(lower,(int,float)) or isinstance(upper,bool) or not isinstance(upper,(int,float)) or not math.isfinite(float(lower)) or not math.isfinite(float(upper)) or lower>=upper:
+            raise ValueError("Optimization requires finite lower < upper.")
+        if getattr(parsed,"free_symbols",set())- {var}: raise ValueError("Optimization expression must use only the selected variable.")
+        fn=sp.lambdify(var,parsed,modules=["math"])
+        objective=(lambda x: fn(x)) if mode in ("optimize","minimize") else (lambda x: -fn(x))
+        opt=minimize_scalar(objective,bounds=(float(lower),float(upper)),method="bounded")
+        if not opt.success or not math.isfinite(float(opt.fun)): raise ValueError("Optimization failed.")
+        result={"x":float(opt.x),"value":float(fn(opt.x)),"kind":"minimum" if mode in ("optimize","minimize") else "maximum","interval":[float(lower),float(upper)]}
+    elif mode in ("root","find_root"):
+        from scipy.optimize import root_scalar
+        lower=args.get("lower",-10); upper=args.get("upper",10)
+        if isinstance(lower,bool) or not isinstance(lower,(int,float)) or isinstance(upper,bool) or not isinstance(upper,(int,float)) or not math.isfinite(float(lower)) or not math.isfinite(float(upper)) or lower>=upper:
+            raise ValueError("Root finding requires finite lower < upper.")
+        if getattr(parsed,"free_symbols",set())- {var}: raise ValueError("Root expression must use only the selected variable.")
+        fn=sp.lambdify(var,parsed,modules=["math"])
+        sol=root_scalar(fn,bracket=(float(lower),float(upper)),method="brentq")
+        if not sol.converged: raise ValueError("Root finding failed to converge.")
+        result={"root":float(sol.root),"iterations":int(sol.iterations),"bracket":[float(lower),float(upper)]}
     elif mode == "matrix":
         matrix=args.get("matrix")
         if not isinstance(matrix,list) or not matrix or len(matrix)>30 or any(not isinstance(row,list) or len(row)>30 for row in matrix):
@@ -229,6 +260,9 @@ def calculate(args):
             result={str(k):int(v) for k,v in M.eigenvals().items()}
         elif op=="transpose": result=str(M.T)
         elif op=="rref": result=str(M.rref()[0])
+        elif op=="trace": result=_sympy_result(M.trace())
+        elif op=="multiply": result=str(M*M) if M.cols==M.rows else "Matrix multiply requires square matrix for single-input power operation."
+        elif op=="power":\n            power=args.get("matrix_power",2)\n            if M.rows!=M.cols: raise ValueError("Matrix power requires a square matrix.")\n            if isinstance(power,bool) or not isinstance(power,int) or not -10<=power<=10: raise ValueError("matrix_power must be an integer from -10 to 10.")\n            result=str(M**power)
         else: raise ValueError("matrix_operation: determinant|inverse|rank|eigenvalues|transpose|rref.")
     else:
         raise ValueError("mode: evaluate|simplify|factor|expand|derivative|integrate|limit|solve|series|matrix.")
