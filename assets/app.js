@@ -6,10 +6,11 @@ const {typesetMath}=window.LACChatRender;
 const {md,esc}=window.LACChatMarkdown;
 let currentModelAlias='',generationModelLabel='Model';function modelLabel(){return generationModelLabel||currentModelAlias||'Model'}
 window.LACChatGenerationUI.init({$: $,getAlias:()=>currentModelAlias,getSelectedModel:selectedModelDisplay});
+window.LACChatMessageUI.init({$: $,md,typeset:typesetMath,formatHMS,toggleTrace:toggleMessageTrace,ensureTrace:ensureMessageTrace,attachmentRender:(node,items)=>window.LACAttachmentUI.renderMessage(node,items),toast,generate,isGenerating:()=>!!controller,getLastAssistant:()=>lastAssistant,setLastAssistant:value=>{lastAssistant=value},hidePreviousContinue:hidePreviousContinueActions,syncActions:syncAssistantActions});
 const {formatHMS,traceDuration,traceStamp,traceLabel,traceSourceLabel,traceLineText}=window.LACChatTraceUtils;
 window.LACChatTraceUI.init(()=>current);
 const {ensureMessageTrace,renderMessageTrace,showTraceEventDetail,startMessageTrace,toggleMessageTrace}=window.LACChatTraceUI;
-function addMessage(role,text,opts={}){
+const addMessage=(role,text,opts={})=>window.LACChatMessageUI.addMessage(role,text,opts);){
  if(role==='user'){hidePreviousContinueActions();syncAssistantActions(true);}
  const d=document.createElement('article');d.className='message '+role;d.dataset.role=role;
  if(opts.message_id)d.dataset.messageId=String(opts.message_id);
