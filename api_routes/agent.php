@@ -1,5 +1,12 @@
 <?php
 /** API route family: agent */
+/** Enforce conversation ownership/unlock boundary for durable Agent tasks. */
+function lac_agent_task_authorized(PDO $pdo,array $task): bool {
+ $conversationId=(int)($task['conversation_id']??0);if($conversationId<1)return false;
+ $q=$pdo->prepare('SELECT password_hash FROM conversations WHERE id=?');$q->execute([$conversationId]);$hash=$q->fetchColumn();
+ if($hash===false)return false;
+ return !$hash||in_array($conversationId,array_map('intval',$_SESSION['conversation_unlocks']??[]),true);
+}
 function lac_web_research(string $query, string $python, string $script, int $timeout=75, string $mode='basic'): array {
  $query=trim($query);
  if($query==='') return ['sources'=>[],'engine_used'=>null,'error'=>'Search query is empty.'];
@@ -68,17 +75,17 @@ if($action==='agent_tools_discover'){
 if($action==='agent_task_status'){
  require_once LAC_ROOT.'/app/agent/task_store.php';
  $runId=(string)($_GET['run_id']??'');if(!preg_match('/^[a-f0-9]{20}$/',$runId))out(['error'=>'Invalid run_id.'],422);
- $task=lac_agent_task_load($runId);if(!$task)out(['error'=>'Task not found.'],404);out(['task'=>$task]);
+ $task=lac_agent_task_load($runId);if(!$task||!lac_agent_task_authorized($pdo,$task))out(['error'=>'Task not found.'],404);out(['task'=>$task]);
 }
 if($action==='agent_tasks_recoverable'){
- require_once LAC_ROOT.'/app/agent/task_store.php';out(['tasks'=>lac_agent_task_recoverable()]);
+ require_once LAC_ROOT.'/app/agent/task_store.php';$tasks=lac_agent_task_recoverable();$tasks=array_values(array_filter($tasks,static fn($task)=>lac_agent_task_authorized($pdo,$task)));out(['tasks'=>$tasks]);
 }
 if($action==='agent_task_reject'){
  require_csrf();require_once LAC_ROOT.'/app/agent/task_store.php';
  $runId=(string)($_POST['run_id']??'');
  if(!preg_match('/^[a-f0-9]{20}$/',$runId))out(['error'=>'Invalid run_id.'],422);
  $task=lac_agent_task_load($runId);
- if(!$task||($task['state']??'')!=='waiting_approval')out(['error'=>'No action is waiting for approval.'],409);
+ if(!$task||!lac_agent_task_authorized($pdo,$task)||($task['state']??'')!=='waiting_approval')out(['error'=>'No action is waiting for approval.'],409);
  lac_agent_task_save($runId,'cancelled',['approval_rejected'=>true,'pending_approval'=>$task['pending_approval']??null],'waiting_approval');
  out(['ok'=>true,'state'=>'cancelled']);
 }
@@ -90,7 +97,7 @@ if($action==='agent_task_approve'){
  $runId=(string)($_POST['run_id']??'');
  if(!preg_match('/^[a-f0-9]{20}$/',$runId))out(['error'=>'Invalid run_id.'],422);
  $task=lac_agent_task_load($runId);
- if(!$task||($task['state']??'')!=='waiting_approval')out(['error'=>'No action is waiting for approval.'],409);
+ if(!$task||!lac_agent_task_authorized($pdo,$task)||($task['state']??'')!=='waiting_approval')out(['error'=>'No action is waiting for approval.'],409);
  $saved=json_decode(setting($pdo,'agent_tool_permissions','[]'),true);if(!is_array($saved))$saved=[];
  $valid=array_values(array_intersect($saved,array_keys(array_filter(lac_tool_catalog(),static fn($tool)=>empty($tool['internal'])))));
  $pending=$task['pending_approval']??[];
