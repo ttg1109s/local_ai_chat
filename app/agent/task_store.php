@@ -2,10 +2,21 @@
 /** Durable Agent task snapshots. Sensitive prompts are excluded unless explicitly checkpointed by caller. */
 function lac_agent_task_dir(): string {return dirname(__DIR__,2).'/storage/agent-tasks';}
 function lac_agent_task_path(string $runId): string {return lac_agent_task_dir().'/'.preg_replace('/[^a-f0-9]/','',$runId).'.json';}
+
+/** Serialize cancellation transitions against managed execution result commits. */
+function lac_agent_task_with_commit_lock(string $runId, callable $callback): mixed {
+ $dir=lac_agent_task_dir();if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('Could not create the task-store directory.');
+ $lock=@fopen($dir.'/'.preg_replace('/[^a-f0-9]/','',$runId).'.commit.lock','c');if(!$lock)throw new RuntimeException('Could not lock task execution commit.');
+ try{if(!flock($lock,LOCK_EX))throw new RuntimeException('Could not acquire task execution commit lock.');return $callback();}
+ finally{flock($lock,LOCK_UN);fclose($lock);}
+}
+
 function lac_agent_task_save(string $runId,string $state,array $data=[],?string $expectedFrom=null): void {
  require_once __DIR__.'/result_store.php';
  $dir=lac_agent_task_dir();if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('Could not create the task-store directory.');
- $path=lac_agent_task_path($runId);$lock=@fopen($path.'.lock','c');if(!$lock)throw new RuntimeException('Could not lock the task checkpoint.');
+ $commitLock=null;
+ if($state==='cancelled'){$commitLock=@fopen($dir.'/'.preg_replace('/[^a-f0-9]/','',$runId).'.commit.lock','c');if(!$commitLock)throw new RuntimeException('Could not lock task cancellation.');if(!flock($commitLock,LOCK_EX))throw new RuntimeException('Could not acquire task cancellation lock.');}
+ $path=lac_agent_task_path($runId);$lock=@fopen($path.'.lock','c');if(!$lock){if(is_resource($commitLock)){flock($commitLock,LOCK_UN);fclose($commitLock);}throw new RuntimeException('Could not lock the task checkpoint.');}
  try{
   if(!flock($lock,LOCK_EX))throw new RuntimeException('Could not acquire the task-checkpoint lock.');
   $old=is_file($path)?json_decode((string)@file_get_contents($path),true):null;
@@ -56,7 +67,7 @@ function lac_agent_task_save(string $runId,string $state,array $data=[],?string 
   }
   $tmp=$path.'.'.bin2hex(random_bytes(5)).'.tmp';$json=json_encode($safe,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRETTY_PRINT);
   if($json===false||@file_put_contents($tmp,$json,LOCK_EX)===false||!@rename($tmp,$path)){@unlink($tmp);throw new RuntimeException('Could not write the task checkpoint.');}
- } finally {flock($lock,LOCK_UN);fclose($lock);}
+ } finally {flock($lock,LOCK_UN);fclose($lock);if(is_resource($commitLock)){flock($commitLock,LOCK_UN);fclose($commitLock);}}
  // Keep committed Data Packs after failed synthesis/transport or user cancellation
  // if tools already completed. Cancellation does not undo committed side effects.
  $preserveCommittedResults=in_array($state,['failed','cancelled'],true)&&(int)($safe['completed_tool_count']??0)>0;
