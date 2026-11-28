@@ -20,4 +20,6 @@ $approveChunk=substr($route,$approvePos);
 $executionStoreRequire=strpos($approveChunk,"require_once LAC_ROOT.'/app/agent/execution_store.php';");
 $managedCall=strpos($approveChunk,'lac_tool_execute_managed(');
 if($executionStoreRequire===false||$managedCall===false||$executionStoreRequire>$managedCall)throw new RuntimeException('Approval route must load execution_store before managed tool execution.');
-echo "PASS: Agent task ownership and approval execution dependency are guarded\\n";
+
+if(!str_contains($approveChunk,"\$toolCallId=(string)(\$pending['tool_call_id']??'')")||!str_contains($approveChunk,"\$toolCallId===''||strlen(\$toolCallId)>128")||str_contains($approveChunk,"approved_'.bin2hex(random_bytes(8))"))throw new RuntimeException('Approval must require a stable tool_call_id and never synthesize a new identity.');
+echo "PASS: Agent task ownership and approval execution dependency/identity are guarded\\n";
