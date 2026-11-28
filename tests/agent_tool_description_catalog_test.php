@@ -3,7 +3,7 @@ require_once __DIR__.'/../app/agent/tool_registry.php';
 require_once __DIR__.'/../app/agent/protocol_compiler.php';
 require_once __DIR__.'/../app/agent/loop/protocol.php';
 $catalog=lac_tool_catalog();
-if(count($catalog)!==11)throw new RuntimeException('Expected 11 remaining registered tools (including two system tools).');
+if(count($catalog)!==12)throw new RuntimeException('Expected 12 remaining registered tools (including two system tools).');
 foreach($catalog as $tool){
  $compiled=lac_agent_compile_protocol([$tool]);
  $entry=$compiled['contract']['tools'][0]??[];
@@ -13,6 +13,13 @@ foreach($catalog as $tool){
   if(array_key_exists($field,$entry))throw new RuntimeException('Help-only field leaked into catalog: '.$field);
  }
 }
+$crawl=$catalog['crawl_website']??null;
+if(!$crawl)throw new RuntimeException('crawl_website must be registered in the tool catalog.');
+if(($crawl['risk']??'')!=='read'||($crawl['domain']??'')!=='website')throw new RuntimeException('crawl_website metadata must classify it as a website read tool.');
+$schema=$crawl['schema']??[];
+if(($schema['required']??[])!==['site']||($schema['properties']['max_pages']['maximum']??null)!==20||($schema['properties']['max_depth']['maximum']??null)!==3)throw new RuntimeException('crawl_website schema must require site and bound crawl limits.');
+$handlers=file_get_contents(__DIR__.'/../app/agent/tool_handlers.php');
+if(!str_contains($handlers,"case 'crawl_website':"))throw new RuntimeException('Registered crawl_website tool must have a dispatcher handler.');
 foreach(['python_generate_data','python_analyze_json','python_machine_learning','get_llama_info','get_infrastructure_status','document_extract'] as $removed){if(isset($catalog[$removed]))throw new RuntimeException('Retired tool remains registered: '.$removed);}
 foreach(['data_access','verify_result'] as $system){if(empty($catalog[$system]['internal'])||empty($catalog[$system]['system_tool']))throw new RuntimeException('System tool must be internal and Runtime-managed: '.$system);}
 $search=$catalog['search_web'];
