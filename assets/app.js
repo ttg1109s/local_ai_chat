@@ -1,4 +1,4 @@
-(()=>{const core=window.LACChatCore,$=core.$,csrf=core.csrf,post=core.post,toast=core.toast;let current=0,activeRun=null,activeMessageId=0,controller=null,lastAssistant=null,generationStarting=false,switchingModel=false;
+(()=>{const core=window.LACChatCore,$=core.$,csrf=core.csrf,post=core.post,toast=core.toast;let current=0,activeRun=null,activeMessageId=0,controller=null,lastAssistant=null,generationStarting=false;
 LACAttachmentUI.init(()=>current,message=>toast(message));
 window.LACChatHistoryUI.init({getCurrentId:()=>current,openConversation,post,toast,onDeleteCurrent:()=>{current=0;$('#messages').innerHTML='';$('#chatTitle').textContent='New chat'}});
 async function refreshConversationAttachments(){return LACAttachmentUI.refresh(()=>current);}
