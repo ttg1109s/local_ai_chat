@@ -53,7 +53,7 @@ test('generation orchestrator completes send stream and cleans state',async()=>{
  const orchestrator=fs.readFileSync(path.join(root,'assets/js/chat-generation-orchestrator.js'),'utf8');
  class FakeFormData{constructor(){this.values=[]}append(k,v){this.values.push([k,v])}}
  const stream='event: meta\ndata: {"run_id":"run-1","message_id":10,"model_label":"Model"}\n\nevent: delta\ndata: {"text":"Hello"}\n\nevent: usage\ndata: {"total_tokens":4}\n\nevent: done\ndata: {"stopped":false,"usage":{"total_tokens":4},"finish_reason":"stop","message_id":10}\n\n';
- const context={window,console,FormData:FakeFormData,AbortController,TextDecoder,TextEncoder,setInterval:()=>1,clearInterval:()=>{},fetch:async()=>({ok:true,body:{getReader:()=>{let sent=false;return{read:async()=>sent?({done:true}):(sent=true,{done:false,value:new TextEncoder().encode(stream)})}}}}),setTimeout,};
+ const context={window,console,FormData:FakeFormData,AbortController,TextDecoder,TextEncoder,setInterval:()=>1,clearInterval:()=>{},fetch:async()=>{calls.push(['fetch']);return({ok:true,body:{getReader:()=>{let sent=false;return{read:async()=>sent?({done:true}):(sent=true,{done:false,value:new TextEncoder().encode(stream)})}}}})}},setTimeout,};
  vm.runInNewContext(sse,context);vm.runInNewContext(events,context);vm.runInNewContext(orchestrator,context);
  const prompt={value:'hello',style:{height:'auto'}},model={value:''},web={checked:false},website={checked:false};
  const elapsed={textContent:''},token={textContent:''},continueBtn={hidden:false,disabled:false};
@@ -64,10 +64,10 @@ test('generation orchestrator completes send stream and cleans state',async()=>{
  const $=sel=>selectors[sel]||{};
  const state={current:0,controller:null,activeRun:null,activeMessageId:0,pendingStop:false,generationStarting:false,lastAssistant:null,modelAlias:'Alias',label:'Model'};
  const st={getCurrent:()=>state.current,setCurrent:v=>state.current=v,getController:()=>state.controller,setController:v=>state.controller=v,getActiveRun:()=>state.activeRun,setActiveRun:v=>state.activeRun=v,getActiveMessageId:()=>state.activeMessageId,setActiveMessageId:v=>state.activeMessageId=v,getPendingStop:()=>state.pendingStop,setPendingStop:v=>state.pendingStop=v,getGenerationStarting:()=>state.generationStarting,setGenerationStarting:v=>state.generationStarting=v,getLastAssistant:()=>state.lastAssistant,setLastAssistant:v=>state.lastAssistant=v,getCurrentModelAlias:()=>state.modelAlias,getGenerationModelLabel:()=>state.label,setGenerationModelLabel:v=>state.label=v};
- window.LACChatGenerationEvents.init({md:s=>s,post:async()=>({}),toast:m=>calls.push(['toast',m]),setState:()=>{},startTrace:()=>{},scroll:()=>{},confirmAction:()=>false});
+ window.LACChatGenerationEvents.init({md:s=>{calls.push(['md',s]);return s},post:async()=>({}),toast:m=>calls.push(['toast',m]),setState:()=>{},startTrace:()=>{},scroll:()=>{},confirmAction:()=>false});
  window.LACChatGenerationOrchestrator.init({$: $,state:st,isModelSwitching:()=>false,isRecoveredGeneration:()=>false,selectedModelDisplay:()=>state.modelAlias,createChat:async()=>{state.current=123},setGenerating:v=>calls.push(['generating',v]),addMessage:(role,text)=>{calls.push(['message',role,text]);return role==='assistant'?body:undefined},setAssistantGenerationState:()=>{},formatHMS:()=> '00:00:01',csrf:'csrf',selectedDocIds:new Set(),updateToolMode:()=>{},agentToolsSavePromise:async()=>{},refreshConversationAttachments:async id=>calls.push(['attachments',id]),loadHistory:async()=>calls.push(['history']),startRecovery:()=>calls.push(['recovery']),toast:m=>calls.push(['toast',m])});
  await window.LACChatGenerationOrchestrator.generate('send');
  assert.equal(state.controller,null);assert.equal(state.activeRun,null);assert.equal(state.generationStarting,false);
- assert.equal(body.innerHTML,'Hello');assert.equal(token.textContent,'Token: 4');assert.equal(continueBtn.hidden,true);
+ assert.equal(body.innerHTML,'Hello',JSON.stringify(calls));assert.equal(token.textContent,'Token: 4');assert.equal(continueBtn.hidden,true);
  assert.equal(calls.some(c=>c[0]==='history'),true);assert.equal(calls.some(c=>c[0]==='recovery'),true);assert.equal(calls.some(c=>c[0]==='attachments'&&c[1]===10),true);
 });
