@@ -157,10 +157,96 @@ def _parse_substitutions(raw):
         out[sp.Symbol(key)] = val
     return out
 
+def _convert_data(args):
+    """Safe data conversions: bases, encodings, units, timestamps, and structured text."""
+    import base64, csv, io, json, urllib.parse, datetime
+    category=str(args.get("conversion_type","")).lower()
+    value=args.get("value")
+    if category in ("number_base","base","numeric_base"):
+        if isinstance(value,bool): raise ValueError("value must be a number or integer string.")
+        number=int(str(value),int(args.get("from_base",10))) if isinstance(value,str) else int(value)
+        to_base=int(args.get("to_base",10))
+        if not 2<=to_base<=36: raise ValueError("to_base must be between 2 and 36.")
+        digits="0123456789abcdefghijklmnopqrstuvwxyz"
+        if number==0: converted="0"
+        else:
+            n=abs(number); out=""
+            while n: n,r=divmod(n,to_base); out=digits[r]+out
+            converted=("-" if number<0 else "")+out
+        return {"value":number,"from_base":args.get("from_base",10),"to_base":to_base,"converted":converted}
+    if category in ("encoding","encode","decode"):
+        operation=str(args.get("operation","encode")).lower()
+        encoding=str(args.get("encoding","base64")).lower()
+        raw=str(value if value is not None else "")
+        if encoding=="base64":
+            if operation=="decode": converted=base64.b64decode(raw,validate=True).decode("utf-8")
+            else: converted=base64.b64encode(raw.encode("utf-8")).decode("ascii")
+        elif encoding=="hex":
+            if operation=="decode": converted=bytes.fromhex(raw).decode("utf-8")
+            else: converted=raw.encode("utf-8").hex()
+        elif encoding in ("url","url_percent"):
+            converted=urllib.parse.unquote(raw) if operation=="decode" else urllib.parse.quote(raw,safe="")
+        elif encoding in ("unicode_escape","unicode"):
+            converted=raw.encode("utf-8").decode("unicode_escape") if operation=="decode" else raw.encode("unicode_escape").decode("ascii")
+        else: raise ValueError("encoding must be base64|hex|url|unicode_escape.")
+        return {"operation":operation,"encoding":encoding,"converted":converted}
+    if category in ("unit","units"):
+        unit=str(args.get("from_unit","")).lower(); target=str(args.get("to_unit","")).lower()
+        try: numeric=float(value)
+        except (TypeError,ValueError): raise ValueError("value must be numeric.") from None
+        if not math.isfinite(numeric): raise ValueError("value must be finite.")
+        groups={
+          "length":{"m":1,"meter":1,"meters":1,"km":1000,"kilometer":1000,"cm":.01,"mm":.001,"mi":1609.344,"mile":1609.344,"yd":.9144,"yard":.9144,"ft":.3048,"feet":.3048,"in":.0254,"inch":.0254},
+          "mass":{"kg":1,"kilogram":1,"g":.001,"gram":.001,"mg":1e-6,"lb":.45359237,"lbs":.45359237,"oz":.028349523125},
+          "time":{"s":1,"sec":1,"second":1,"seconds":1,"ms":.001,"min":60,"minute":60,"h":3600,"hr":3600,"hour":3600,"day":86400,"d":86400},
+          "volume":{"l":1,"liter":1,"litre":1,"ml":.001,"m3":1000,"gal_us":3.785411784,"gallon":3.785411784,"cup_us":.2365882365},
+          "speed":{"m/s":1,"km/h":1/3.6,"mph":.44704,"ft/s":.3048,"knot":.5144444444},
+          "area":{"m2":1,"km2":1e6,"cm2":1e-4,"ft2":.09290304,"acre":4046.8564224,"ha":10000},
+          "pressure":{"pa":1,"kpa":1000,"bar":100000,"atm":101325,"psi":6894.757293},
+          "energy":{"j":1,"kj":1000,"cal":4.184,"kcal":4184,"wh":3600,"kwh":3600000,"ev":1.602176634e-19},
+          "temperature":{"c":["c"],"f":["f"],"k":["k"]}
+        }
+        if unit in groups["temperature"] and target in groups["temperature"]:
+            c=numeric if unit=="c" else (numeric-32)*5/9 if unit=="f" else numeric-273.15
+            converted=c if target=="c" else c*9/5+32 if target=="f" else c+273.15
+            return {"value":numeric,"from_unit":unit,"to_unit":target,"converted":converted}
+        group=next((g for g,table in groups.items() if unit in table and target in table),None)
+        if not group: raise ValueError("Units are unsupported or belong to different dimensions.")
+        converted=numeric*groups[group][unit]/groups[group][target]
+        return {"value":numeric,"from_unit":unit,"to_unit":target,"converted":converted,"dimension":group}
+    if category in ("timestamp","datetime","date_time"):
+        operation=str(args.get("operation","to_timestamp")).lower()
+        unit=str(args.get("timestamp_unit","seconds")).lower()
+        scales={"seconds":1,"s":1,"milliseconds":1000,"ms":1000,"microseconds":1e6,"us":1e6,"nanoseconds":1e9,"ns":1e9}
+        if operation in ("to_timestamp","timestamp"):
+            dt=datetime.datetime.fromisoformat(str(value).replace("Z","+00:00"))
+            if dt.tzinfo is None: dt=dt.replace(tzinfo=datetime.timezone.utc)
+            converted=dt.timestamp()*scales.get(unit,1)
+        elif operation in ("from_timestamp","datetime"):
+            if unit not in scales: raise ValueError("timestamp_unit must be seconds|milliseconds|microseconds|nanoseconds.")
+            converted=datetime.datetime.fromtimestamp(float(value)/scales[unit],datetime.timezone.utc).isoformat()
+        else: raise ValueError("datetime operation must be to_timestamp|from_timestamp.")
+        return {"operation":operation,"timestamp_unit":unit,"converted":converted}
+    if category in ("json_csv","json_to_csv","csv_json","csv_to_json","structured"):
+        operation=str(args.get("operation","json_to_csv")).lower()
+        if operation in ("json_to_csv","json_csv"):
+            data=json.loads(value) if isinstance(value,str) else value
+            if not isinstance(data,list) or not data or not all(isinstance(row,dict) for row in data): raise ValueError("JSON-to-CSV requires a non-empty list of objects.")
+            output=io.StringIO(); writer=csv.DictWriter(output,fieldnames=list(dict.fromkeys(k for row in data for k in row)))
+            writer.writeheader(); writer.writerows(data)
+            converted=output.getvalue()
+        elif operation in ("csv_to_json","csv_json"):
+            converted=json.dumps(list(csv.DictReader(io.StringIO(str(value)))),ensure_ascii=False)
+        else: raise ValueError("structured operation must be json_to_csv|csv_to_json.")
+        return {"operation":operation,"converted":converted}
+    raise ValueError("conversion_type: number_base|encoding|unit|timestamp|json_csv.")
+
 def calculate(args):
     import sympy as sp
     expr = args.get("expression", "")
     mode = str(args.get("mode", "evaluate")).lower()
+    if mode in ("convert", "conversion", "data_conversion"):
+        return {"mode":mode,"conversion_type":args.get("conversion_type"),"result":_convert_data(args)}
     parsed = _safe_sympy_expression(expr)
     variable_name = args.get("variable", "x")
     if not isinstance(variable_name,str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,31}",variable_name):
