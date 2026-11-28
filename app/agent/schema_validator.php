@@ -71,25 +71,53 @@ function lac_tool_validate_arguments(string $name,array $args,array $meta): arra
  $errors=lac_schema_validate_value($args,$schema);
  if($name==='manage_websites'&&($args['action']??'')==='read'&&(!isset($args['site'])||!is_string($args['site'])||trim($args['site'])===''))$errors[]='arguments.site is required and must be a non-empty string when action=read.';
  if($name==='python_generate_number'){
-  $distribution=(string)($args['distribution']??'');
-  $shape=(string)($args['shape']??'vector');
-  $numberType=(string)($args['number_type']??($distribution==='binary'||$distribution==='integer'?'integer':'float'));
-  if($distribution==='binary'&&$numberType!=='integer')$errors[]='arguments.number_type must be integer for binary distribution.';
-  if($shape==='vector'){
-   $count=$args['count']??10;
-   if(!is_int($count)||$count<1||$count>10000)$errors[]='arguments.count must be an integer from 1 to 10,000 for vector shape.';
-   if(array_key_exists('rows',$args)||array_key_exists('columns',$args))$errors[]='arguments.rows and columns are only valid when shape=matrix.';
-  }elseif($shape==='matrix'){
-   $rows=$args['rows']??null;$columns=$args['columns']??null;
-   if(!is_int($rows)||!is_int($columns)||$rows<1||$columns<1)$errors[]='arguments.rows and columns are required positive integers for matrix shape.';
-   elseif($rows*$columns>10000)$errors[]='arguments.rows*columns must not exceed 10,000 values.';
-   if(array_key_exists('count',$args))$errors[]='arguments.count is only valid when shape=vector.';
-  }
-  if(in_array($distribution,['integer','uniform'],true)&&isset($args['min'],$args['max'])&&$args['min']>=$args['max'])$errors[]='arguments.min must be less than arguments.max for integer or uniform distributions.';
-  if($distribution==='integer'&&isset($args['min'],$args['max'])&&ceil($args['min'])>floor($args['max']))$errors[]='arguments.min and max must include at least one integer.';
-  if($distribution==='uniform'&&$numberType==='integer'&&isset($args['min'],$args['max'])&&ceil($args['min'])>floor($args['max']))$errors[]='arguments.min and max must include at least one integer for integer output.';
-  if($distribution==='normal'&&isset($args['mean'])&&!is_finite((float)$args['mean']))$errors[]='arguments.mean must be finite.';
-  if(array_key_exists('probability',$args)&&$distribution!=='binary')$errors[]='arguments.probability is only valid for binary distribution.';
+  $operation=(string)($args['operation']??'random');
+  if($operation==='random'){
+   $distribution=(string)($args['distribution']??'');
+   $shape=(string)($args['shape']??'vector');
+   $numberType=(string)($args['number_type']??(in_array($distribution,['binary','integer','binomial','poisson'],true)?'integer':'float'));
+   if(!in_array($distribution,['binary','integer','uniform','normal','binomial','poisson','exponential','beta','gamma','lognormal','triangular'],true))$errors[]='arguments.distribution is required and must be a supported numeric distribution for operation=random.';
+   if(in_array($distribution,['binary','binomial','poisson'],true)&&$numberType!=='integer')$errors[]='arguments.number_type must be integer for binary, binomial, and poisson distributions.';
+   if($shape==='vector'){
+    $count=$args['count']??10;
+    if(!is_int($count)||$count<1||$count>10000)$errors[]='arguments.count must be an integer from 1 to 10,000 for vector shape.';
+    if(array_key_exists('rows',$args)||array_key_exists('columns',$args))$errors[]='arguments.rows and columns are only valid when shape=matrix.';
+   }elseif($shape==='matrix'){
+    $rows=$args['rows']??null;$columns=$args['columns']??null;
+    if(!is_int($rows)||!is_int($columns)||$rows<1||$columns<1)$errors[]='arguments.rows and columns are required positive integers for matrix shape.';
+    elseif($rows*$columns>10000)$errors[]='arguments.rows*columns must not exceed 10,000 values.';
+    if(array_key_exists('count',$args))$errors[]='arguments.count is only valid when shape=vector.';
+   }
+   if(in_array($distribution,['integer','uniform','triangular'],true)&&isset($args['min'],$args['max'])&&$args['min']>=$args['max'])$errors[]='arguments.min must be less than arguments.max.';
+   if($distribution==='integer'&&isset($args['min'],$args['max'])&&ceil($args['min'])>floor($args['max']))$errors[]='arguments.min and max must include at least one integer.';
+   if($distribution==='uniform'&&$numberType==='integer'&&isset($args['min'],$args['max'])&&ceil($args['min'])>floor($args['max']))$errors[]='Integer uniform output requires an integer in the min/max range.';
+   if($distribution==='normal'&&isset($args['std'])&&$args['std']<=0)$errors[]='arguments.std must be greater than 0.';
+   if($distribution==='lognormal'&&isset($args['std'])&&$args['std']<=0)$errors[]='arguments.std (sigma) must be greater than 0 for lognormal.';
+   if(in_array($distribution,['binary','binomial'],true)&&isset($args['probability'])&&($args['probability']<0||$args['probability']>1))$errors[]='arguments.probability must be between 0 and 1.';
+   if($distribution==='poisson'&&isset($args['lambda'])&&$args['lambda']<=0)$errors[]='arguments.lambda must be greater than 0.';
+   if(in_array($distribution,['exponential','gamma'],true)&&isset($args['scale'])&&$args['scale']<=0)$errors[]='arguments.scale must be greater than 0.';
+   if(in_array($distribution,['beta','gamma'],true)&&isset($args['alpha'])&&$args['alpha']<=0)$errors[]='arguments.alpha must be greater than 0.';
+   if($distribution==='beta'&&isset($args['beta'])&&$args['beta']<=0)$errors[]='arguments.beta must be greater than 0.';
+   if($distribution==='triangular'&&isset($args['min'],$args['max'],$args['mode'])&&($args['mode']<$args['min']||$args['mode']>$args['max']))$errors[]='arguments.mode must be within min and max for triangular distribution.';
+   foreach(['probability','trials','lambda','scale','alpha','beta','mode'] as $field)if(array_key_exists($field,$args)&&!in_array($field,match($distribution){'binary'=>['probability'],'binomial'=>['probability','trials'],'poisson'=>['lambda'],'exponential'=>['scale'],'beta'=>['alpha','beta'],'gamma'=>['alpha','scale'],'triangular'=>['mode'],'default'=>[]},true))$errors[]='arguments.'.$field.' is not applicable to the selected distribution.';
+  }elseif($operation==='sequence'){
+   $type=(string)($args['sequence_type']??'arithmetic');
+   if(!in_array($type,['arithmetic','geometric','fibonacci','range','logarithmic','polynomial','prime'],true))$errors[]='arguments.sequence_type must be a supported sequence type.';
+   $count=$args['count']??10;if(!is_int($count)||$count<1||$count>10000)$errors[]='arguments.count must be from 1 to 10,000 for sequence.';
+   if($type==='polynomial'&&empty($args['coefficients']))$errors[]='arguments.coefficients is required for polynomial sequence.';
+   if($type==='range'&&isset($args['step'])&&$args['step']==0)$errors[]='arguments.step cannot be zero for range sequence.';
+   if($type==='logarithmic'&&isset($args['base'])&&($args['base']<=0||$args['base']==1))$errors[]='arguments.base must be positive and not 1.';
+   if(isset($args['number_type'])&&!in_array($args['number_type'],['integer','float'],true))$errors[]='arguments.number_type must be integer or float.';
+  }elseif($operation==='sampling'){
+   if(empty($args['population'])||!is_array($args['population'])||!array_is_list($args['population']))$errors[]='arguments.population is required as a non-empty numeric array.';
+   if(isset($args['weights'])&&(!is_array($args['weights'])||!is_array($args['population']??null)||count($args['weights'])!==count($args['population'])))$errors[]='arguments.weights must match population length.';
+   if(($args['replace']??true)===false&&isset($args['count'],$args['population'])&&$args['count']>count($args['population']))$errors[]='arguments.count cannot exceed population size when replace=false.';
+  }elseif($operation==='transform'){
+   if(empty($args['values'])||!is_array($args['values'])||!array_is_list($args['values']))$errors[]='arguments.values is required as a non-empty numeric array for transform.';
+   if(!in_array((string)($args['transform_type']??''),['scale','offset','round','clip','normalize','standardize','absolute','floor','ceil'],true))$errors[]='arguments.transform_type is required and must be supported.';
+   if(isset($args['min'],$args['max'])&&$args['min']>$args['max'])$errors[]='arguments.min must be <= max for clip transform.';
+   if(isset($args['target_min'],$args['target_max'])&&$args['target_min']>=$args['target_max'])$errors[]='arguments.target_min must be less than target_max.';
+  }else $errors[]='arguments.operation must be random, sequence, sampling, or transform.';
  }
  if($name==='python_dataframe'){
   $operation=(string)($args['operation']??'profile');
