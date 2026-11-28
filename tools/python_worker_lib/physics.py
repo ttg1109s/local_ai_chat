@@ -1,0 +1,2193 @@
+"""Physics calculation domain; migrated from the legacy PHP formula engine."""
+from .common import *
+import math
+
+FORMULAS = [
+  {
+    "id": "velocity",
+    "domain": "kinematics",
+    "name": "Average velocity",
+    "target": "velocity",
+    "inputs": [
+      "distance",
+      "time"
+    ],
+    "equation": "v=s/t",
+    "expr": "x[\"distance\"]/x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "distance_uniform",
+    "domain": "kinematics",
+    "name": "Uniform-motion distance",
+    "target": "distance",
+    "inputs": [
+      "velocity",
+      "time"
+    ],
+    "equation": "s=vt",
+    "expr": "x[\"velocity\"]*x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "acceleration",
+    "domain": "kinematics",
+    "name": "Acceleration",
+    "target": "acceleration",
+    "inputs": [
+      "final_velocity",
+      "initial_velocity",
+      "time"
+    ],
+    "equation": "a=(v-v0)/t",
+    "expr": "(x[\"final_velocity\"]-x[\"initial_velocity\"])/x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "final_velocity",
+    "domain": "kinematics",
+    "name": "Final velocity",
+    "target": "velocity",
+    "inputs": [
+      "initial_velocity",
+      "acceleration",
+      "time"
+    ],
+    "equation": "v=v0+at",
+    "expr": "x[\"initial_velocity\"]+x[\"acceleration\"]*x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "distance_accelerated",
+    "domain": "kinematics",
+    "name": "Distance with constant acceleration",
+    "target": "distance",
+    "inputs": [
+      "initial_velocity",
+      "time",
+      "acceleration"
+    ],
+    "equation": "s=v0t+at²/2",
+    "expr": "x[\"initial_velocity\"]*x[\"time\"]+.5*x[\"acceleration\"]*x[\"time\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "velocity_distance",
+    "domain": "kinematics",
+    "name": "Velocity from displacement",
+    "target": "velocity",
+    "inputs": [
+      "initial_velocity",
+      "acceleration",
+      "distance"
+    ],
+    "equation": "v=sqrt(v0²+2as)",
+    "expr": "math.sqrt(max(0,x[\"initial_velocity\"]**2+2*x[\"acceleration\"]*x[\"distance\"])))",
+    "assumptions": []
+  },
+  {
+    "id": "freefall_distance",
+    "domain": "kinematics",
+    "name": "Free-fall distance",
+    "target": "distance",
+    "inputs": [
+      "gravity",
+      "time"
+    ],
+    "equation": "h=gt²/2",
+    "expr": ".5*x[\"gravity\"]*x[\"time\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "freefall_velocity",
+    "domain": "kinematics",
+    "name": "Free-fall speed",
+    "target": "velocity",
+    "inputs": [
+      "gravity",
+      "time"
+    ],
+    "equation": "v=gt",
+    "expr": "x[\"gravity\"]*x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "freefall_time",
+    "domain": "kinematics",
+    "name": "Free-fall time",
+    "target": "time",
+    "inputs": [
+      "height",
+      "gravity"
+    ],
+    "equation": "t=sqrt(2h/g)",
+    "expr": "math.sqrt(2*x[\"height\"]/x[\"gravity\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "projectile_range",
+    "domain": "kinematics",
+    "name": "Projectile range (same elevation)",
+    "target": "range",
+    "inputs": [
+      "initial_speed",
+      "angle",
+      "gravity"
+    ],
+    "equation": "R=v0²sin(2θ)/g",
+    "expr": "x[\"initial_speed\"]**2*math.sin(2*x[\"angle\"]*math.pi/180)/x[\"gravity\"]",
+    "assumptions": [
+      "Same launch/landing elevation; angle in degrees"
+    ]
+  },
+  {
+    "id": "projectile_height",
+    "domain": "kinematics",
+    "name": "Projectile maximum height",
+    "target": "height",
+    "inputs": [
+      "initial_speed",
+      "angle",
+      "gravity"
+    ],
+    "equation": "H=v0²sin²θ/(2g)",
+    "expr": "x[\"initial_speed\"]**2*math.sin(x[\"angle\"]*math.pi/180)**2/(2*x[\"gravity\"])",
+    "assumptions": [
+      "Angle in degrees"
+    ]
+  },
+  {
+    "id": "force",
+    "domain": "mechanics",
+    "name": "Newton second law",
+    "target": "force",
+    "inputs": [
+      "mass",
+      "acceleration"
+    ],
+    "equation": "F=ma",
+    "expr": "x[\"mass\"]*x[\"acceleration\"])",
+    "assumptions": []
+  },
+  {
+    "id": "weight",
+    "domain": "mechanics",
+    "name": "Weight",
+    "target": "force",
+    "inputs": [
+      "mass",
+      "gravity"
+    ],
+    "equation": "W=mg",
+    "expr": "x[\"mass\"]*x[\"gravity\"])",
+    "assumptions": []
+  },
+  {
+    "id": "friction",
+    "domain": "mechanics",
+    "name": "Friction force",
+    "target": "force",
+    "inputs": [
+      "coefficient",
+      "normal_force"
+    ],
+    "equation": "F=μN",
+    "expr": "x[\"coefficient\"]*x[\"normal_force\"])",
+    "assumptions": []
+  },
+  {
+    "id": "spring_force",
+    "domain": "mechanics",
+    "name": "Spring force magnitude",
+    "target": "force",
+    "inputs": [
+      "spring_constant",
+      "displacement"
+    ],
+    "equation": "F=kx",
+    "expr": "x[\"spring_constant\"]*abs(x[\"displacement\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "centripetal_force",
+    "domain": "mechanics",
+    "name": "Centripetal force",
+    "target": "force",
+    "inputs": [
+      "mass",
+      "velocity",
+      "radius"
+    ],
+    "equation": "Fc=mv²/r",
+    "expr": "x[\"mass\"]*x[\"velocity\"]**2/x[\"radius\"])",
+    "assumptions": []
+  },
+  {
+    "id": "momentum",
+    "domain": "mechanics",
+    "name": "Momentum",
+    "target": "momentum",
+    "inputs": [
+      "mass",
+      "velocity"
+    ],
+    "equation": "p=mv",
+    "expr": "x[\"mass\"]*x[\"velocity\"])",
+    "assumptions": []
+  },
+  {
+    "id": "impulse",
+    "domain": "mechanics",
+    "name": "Impulse",
+    "target": "impulse",
+    "inputs": [
+      "force",
+      "time"
+    ],
+    "equation": "J=FΔt",
+    "expr": "x[\"force\"]*x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "force_momentum",
+    "domain": "mechanics",
+    "name": "Average force from momentum change",
+    "target": "force",
+    "inputs": [
+      "delta_momentum",
+      "time"
+    ],
+    "equation": "F=Δp/Δt",
+    "expr": "x[\"delta_momentum\"]/x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "gravity_force",
+    "domain": "mechanics",
+    "name": "Universal gravitation",
+    "target": "force",
+    "inputs": [
+      "mass1",
+      "mass2",
+      "distance",
+      "gravitational_constant"
+    ],
+    "equation": "F=Gm1m2/r²",
+    "expr": "x[\"gravitational_constant\"]*x[\"mass1\"]*x[\"mass2\"]/x[\"distance\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "gravity_field",
+    "domain": "mechanics",
+    "name": "Gravity field strength",
+    "target": "gravity",
+    "inputs": [
+      "central_mass",
+      "radius",
+      "gravitational_constant"
+    ],
+    "equation": "g=GM/r²",
+    "expr": "x[\"gravitational_constant\"]*x[\"central_mass\"]/x[\"radius\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "work",
+    "domain": "energy",
+    "name": "Work",
+    "target": "work",
+    "inputs": [
+      "force",
+      "distance",
+      "angle"
+    ],
+    "equation": "W=Fs cosθ",
+    "expr": "x[\"force\"]*x[\"distance\"]*math.cos(x[\"angle\"]*math.pi/180)",
+    "assumptions": [
+      "Angle in degrees"
+    ]
+  },
+  {
+    "id": "kinetic_energy",
+    "domain": "energy",
+    "name": "Kinetic energy",
+    "target": "energy",
+    "inputs": [
+      "mass",
+      "velocity"
+    ],
+    "equation": "E=mv²/2",
+    "expr": ".5*x[\"mass\"]*x[\"velocity\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "potential_energy",
+    "domain": "energy",
+    "name": "Gravitational potential energy",
+    "target": "energy",
+    "inputs": [
+      "mass",
+      "gravity",
+      "height"
+    ],
+    "equation": "E=mgh",
+    "expr": "x[\"mass\"]*x[\"gravity\"]*x[\"height\"])",
+    "assumptions": []
+  },
+  {
+    "id": "spring_energy",
+    "domain": "energy",
+    "name": "Elastic potential energy",
+    "target": "energy",
+    "inputs": [
+      "spring_constant",
+      "displacement"
+    ],
+    "equation": "E=kx²/2",
+    "expr": ".5*x[\"spring_constant\"]*x[\"displacement\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "power",
+    "domain": "energy",
+    "name": "Power",
+    "target": "power",
+    "inputs": [
+      "work",
+      "time"
+    ],
+    "equation": "P=W/t",
+    "expr": "x[\"work\"]/x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "power_fv",
+    "domain": "energy",
+    "name": "Power from force and speed",
+    "target": "power",
+    "inputs": [
+      "force",
+      "velocity"
+    ],
+    "equation": "P=Fv",
+    "expr": "x[\"force\"]*x[\"velocity\"])",
+    "assumptions": []
+  },
+  {
+    "id": "efficiency",
+    "domain": "energy",
+    "name": "Efficiency percent",
+    "target": "efficiency",
+    "inputs": [
+      "useful_output",
+      "input"
+    ],
+    "equation": "η=100 useful/input",
+    "expr": "100*x[\"useful_output\"]/x[\"input\"])",
+    "assumptions": []
+  },
+  {
+    "id": "angular_velocity",
+    "domain": "rotation",
+    "name": "Angular velocity",
+    "target": "angular_velocity",
+    "inputs": [
+      "angle",
+      "time"
+    ],
+    "equation": "ω=θ/t",
+    "expr": "x[\"angle\"]/x[\"time\"]",
+    "assumptions": [
+      "Angle in radians"
+    ]
+  },
+  {
+    "id": "angular_acceleration",
+    "domain": "rotation",
+    "name": "Angular acceleration",
+    "target": "angular_acceleration",
+    "inputs": [
+      "final_angular_velocity",
+      "initial_angular_velocity",
+      "time"
+    ],
+    "equation": "α=Δω/t",
+    "expr": "(x[\"final_angular_velocity\"]-x[\"initial_angular_velocity\"])/x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "centripetal_acceleration",
+    "domain": "rotation",
+    "name": "Centripetal acceleration",
+    "target": "acceleration",
+    "inputs": [
+      "velocity",
+      "radius"
+    ],
+    "equation": "a=v²/r",
+    "expr": "x[\"velocity\"]**2/x[\"radius\"])",
+    "assumptions": []
+  },
+  {
+    "id": "linear_speed",
+    "domain": "rotation",
+    "name": "Linear speed from angular speed",
+    "target": "velocity",
+    "inputs": [
+      "angular_velocity",
+      "radius"
+    ],
+    "equation": "v=ωr",
+    "expr": "x[\"angular_velocity\"]*x[\"radius\"])",
+    "assumptions": []
+  },
+  {
+    "id": "density",
+    "domain": "fluids",
+    "name": "Density",
+    "target": "density",
+    "inputs": [
+      "mass",
+      "volume"
+    ],
+    "equation": "ρ=m/V",
+    "expr": "x[\"mass\"]/x[\"volume\"])",
+    "assumptions": []
+  },
+  {
+    "id": "pressure",
+    "domain": "fluids",
+    "name": "Pressure",
+    "target": "pressure",
+    "inputs": [
+      "force",
+      "area"
+    ],
+    "equation": "p=F/A",
+    "expr": "x[\"force\"]/x[\"area\"])",
+    "assumptions": []
+  },
+  {
+    "id": "hydrostatic",
+    "domain": "fluids",
+    "name": "Hydrostatic pressure",
+    "target": "pressure",
+    "inputs": [
+      "density",
+      "gravity",
+      "depth"
+    ],
+    "equation": "p=ρgh",
+    "expr": "x[\"density\"]*x[\"gravity\"]*x[\"depth\"])",
+    "assumptions": []
+  },
+  {
+    "id": "buoyancy",
+    "domain": "fluids",
+    "name": "Archimedes force",
+    "target": "force",
+    "inputs": [
+      "fluid_density",
+      "gravity",
+      "displaced_volume"
+    ],
+    "equation": "FA=ρgV",
+    "expr": "x[\"fluid_density\"]*x[\"gravity\"]*x[\"displaced_volume\"])",
+    "assumptions": []
+  },
+  {
+    "id": "flow_rate",
+    "domain": "fluids",
+    "name": "Volumetric flow rate",
+    "target": "flow_rate",
+    "inputs": [
+      "volume",
+      "time"
+    ],
+    "equation": "Q=V/t",
+    "expr": "x[\"volume\"]/x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "flow_area",
+    "domain": "fluids",
+    "name": "Flow rate",
+    "target": "flow_rate",
+    "inputs": [
+      "area",
+      "velocity"
+    ],
+    "equation": "Q=Av",
+    "expr": "x[\"area\"]*x[\"velocity\"])",
+    "assumptions": []
+  },
+  {
+    "id": "continuity",
+    "domain": "fluids",
+    "name": "Continuity equation downstream speed",
+    "target": "velocity2",
+    "inputs": [
+      "area1",
+      "velocity1",
+      "area2"
+    ],
+    "equation": "v2=A1v1/A2",
+    "expr": "x[\"area1\"]*x[\"velocity1\"]/x[\"area2\"])",
+    "assumptions": []
+  },
+  {
+    "id": "torricelli",
+    "domain": "fluids",
+    "name": "Torricelli speed",
+    "target": "velocity",
+    "inputs": [
+      "gravity",
+      "height"
+    ],
+    "equation": "v=sqrt(2gh)",
+    "expr": "math.sqrt(2*x[\"gravity\"]*x[\"height\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "heat",
+    "domain": "thermal",
+    "name": "Sensible heat",
+    "target": "heat",
+    "inputs": [
+      "mass",
+      "specific_heat",
+      "temperature_change"
+    ],
+    "equation": "Q=mcΔT",
+    "expr": "x[\"mass\"]*x[\"specific_heat\"]*x[\"temperature_change\"])",
+    "assumptions": []
+  },
+  {
+    "id": "latent_heat",
+    "domain": "thermal",
+    "name": "Latent heat",
+    "target": "heat",
+    "inputs": [
+      "mass",
+      "latent_heat"
+    ],
+    "equation": "Q=mL",
+    "expr": "x[\"mass\"]*x[\"latent_heat\"])",
+    "assumptions": []
+  },
+  {
+    "id": "celsius_kelvin",
+    "domain": "thermal",
+    "name": "Celsius to Kelvin",
+    "target": "temperature",
+    "inputs": [
+      "celsius"
+    ],
+    "equation": "K=C+273.15",
+    "expr": "x[\"celsius\"]+273.15)",
+    "assumptions": []
+  },
+  {
+    "id": "celsius_fahrenheit",
+    "domain": "thermal",
+    "name": "Celsius to Fahrenheit",
+    "target": "temperature",
+    "inputs": [
+      "celsius"
+    ],
+    "equation": "F=9C/5+32",
+    "expr": "9*x[\"celsius\"]/5+32)",
+    "assumptions": []
+  },
+  {
+    "id": "fahrenheit_celsius",
+    "domain": "thermal",
+    "name": "Fahrenheit to Celsius",
+    "target": "temperature",
+    "inputs": [
+      "fahrenheit"
+    ],
+    "equation": "C=5(F-32)/9",
+    "expr": "5*(x[\"fahrenheit\"]-32)/9)",
+    "assumptions": []
+  },
+  {
+    "id": "linear_expansion",
+    "domain": "thermal",
+    "name": "Linear expansion",
+    "target": "length_change",
+    "inputs": [
+      "initial_length",
+      "expansion_coefficient",
+      "temperature_change"
+    ],
+    "equation": "ΔL=αL0ΔT",
+    "expr": "x[\"expansion_coefficient\"]*x[\"initial_length\"]*x[\"temperature_change\"])",
+    "assumptions": []
+  },
+  {
+    "id": "ideal_gas",
+    "domain": "thermal",
+    "name": "Ideal gas pressure",
+    "target": "pressure",
+    "inputs": [
+      "moles",
+      "gas_constant",
+      "temperature",
+      "volume"
+    ],
+    "equation": "P=nRT/V",
+    "expr": "x[\"moles\"]*x[\"gas_constant\"]*x[\"temperature\"]/x[\"volume\"])",
+    "assumptions": []
+  },
+  {
+    "id": "boyle",
+    "domain": "thermal",
+    "name": "Boyle law final pressure",
+    "target": "pressure2",
+    "inputs": [
+      "pressure1",
+      "volume1",
+      "volume2"
+    ],
+    "equation": "P2=P1V1/V2",
+    "expr": "x[\"pressure1\"]*x[\"volume1\"]/x[\"volume2\"])",
+    "assumptions": []
+  },
+  {
+    "id": "charles",
+    "domain": "thermal",
+    "name": "Charles law final volume",
+    "target": "volume2",
+    "inputs": [
+      "volume1",
+      "temperature1",
+      "temperature2"
+    ],
+    "equation": "V2=V1T2/T1",
+    "expr": "x[\"volume1\"]*x[\"temperature2\"]/x[\"temperature1\"])",
+    "assumptions": []
+  },
+  {
+    "id": "combined_gas",
+    "domain": "thermal",
+    "name": "Combined gas law final pressure",
+    "target": "pressure2",
+    "inputs": [
+      "pressure1",
+      "volume1",
+      "temperature1",
+      "volume2",
+      "temperature2"
+    ],
+    "equation": "P2=P1V1T2/(T1V2)",
+    "expr": "x[\"pressure1\"]*x[\"volume1\"]*x[\"temperature2\"]/(x[\"temperature1\"]*x[\"volume2\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "charge",
+    "domain": "electricity",
+    "name": "Charge from current and time",
+    "target": "charge",
+    "inputs": [
+      "current",
+      "time"
+    ],
+    "equation": "Q=It",
+    "expr": "x[\"current\"]*x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "ohm_voltage",
+    "domain": "electricity",
+    "name": "Ohm voltage",
+    "target": "voltage",
+    "inputs": [
+      "current",
+      "resistance"
+    ],
+    "equation": "U=IR",
+    "expr": "x[\"current\"]*x[\"resistance\"])",
+    "assumptions": []
+  },
+  {
+    "id": "ohm_current",
+    "domain": "electricity",
+    "name": "Ohm current",
+    "target": "current",
+    "inputs": [
+      "voltage",
+      "resistance"
+    ],
+    "equation": "I=U/R",
+    "expr": "x[\"voltage\"]/x[\"resistance\"])",
+    "assumptions": []
+  },
+  {
+    "id": "ohm_resistance",
+    "domain": "electricity",
+    "name": "Ohm resistance",
+    "target": "resistance",
+    "inputs": [
+      "voltage",
+      "current"
+    ],
+    "equation": "R=U/I",
+    "expr": "x[\"voltage\"]/x[\"current\"])",
+    "assumptions": []
+  },
+  {
+    "id": "wire_resistance",
+    "domain": "electricity",
+    "name": "Wire resistance",
+    "target": "resistance",
+    "inputs": [
+      "resistivity",
+      "length",
+      "area"
+    ],
+    "equation": "R=ρL/A",
+    "expr": "x[\"resistivity\"]*x[\"length\"]/x[\"area\"])",
+    "assumptions": []
+  },
+  {
+    "id": "electric_power",
+    "domain": "electricity",
+    "name": "Electric power",
+    "target": "power",
+    "inputs": [
+      "voltage",
+      "current"
+    ],
+    "equation": "P=UI",
+    "expr": "x[\"voltage\"]*x[\"current\"])",
+    "assumptions": []
+  },
+  {
+    "id": "electric_power_resistance",
+    "domain": "electricity",
+    "name": "Electric power by I²R",
+    "target": "power",
+    "inputs": [
+      "current",
+      "resistance"
+    ],
+    "equation": "P=I²R",
+    "expr": "x[\"current\"]**2*x[\"resistance\"])",
+    "assumptions": []
+  },
+  {
+    "id": "electric_energy",
+    "domain": "electricity",
+    "name": "Electrical energy",
+    "target": "energy",
+    "inputs": [
+      "power",
+      "time"
+    ],
+    "equation": "E=Pt",
+    "expr": "x[\"power\"]*x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "joule_heat",
+    "domain": "electricity",
+    "name": "Joule heating",
+    "target": "heat",
+    "inputs": [
+      "current",
+      "resistance",
+      "time"
+    ],
+    "equation": "Q=I²Rt",
+    "expr": "x[\"current\"]**2*x[\"resistance\"]*x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "capacitance",
+    "domain": "electricity",
+    "name": "Capacitance",
+    "target": "capacitance",
+    "inputs": [
+      "charge",
+      "voltage"
+    ],
+    "equation": "C=Q/U",
+    "expr": "x[\"charge\"]/x[\"voltage\"])",
+    "assumptions": []
+  },
+  {
+    "id": "capacitor_energy",
+    "domain": "electricity",
+    "name": "Capacitor energy",
+    "target": "energy",
+    "inputs": [
+      "capacitance",
+      "voltage"
+    ],
+    "equation": "E=CU²/2",
+    "expr": ".5*x[\"capacitance\"]*x[\"voltage\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "magnetic_wire_force",
+    "domain": "magnetism",
+    "name": "Force on current-carrying wire",
+    "target": "force",
+    "inputs": [
+      "magnetic_field",
+      "current",
+      "length",
+      "angle"
+    ],
+    "equation": "F=BILsinθ",
+    "expr": "x[\"magnetic_field\"]*x[\"current\"]*x[\"length\"]*math.sin(x[\"angle\"]*math.pi/180))",
+    "assumptions": []
+  },
+  {
+    "id": "lorentz_force",
+    "domain": "magnetism",
+    "name": "Lorentz force magnitude",
+    "target": "force",
+    "inputs": [
+      "charge",
+      "velocity",
+      "magnetic_field",
+      "angle"
+    ],
+    "equation": "F=qvBsinθ",
+    "expr": "abs(x[\"charge\"])*x[\"velocity\"]*x[\"magnetic_field\"]*math.sin(x[\"angle\"]*math.pi/180))",
+    "assumptions": []
+  },
+  {
+    "id": "magnetic_flux",
+    "domain": "magnetism",
+    "name": "Magnetic flux",
+    "target": "magnetic_flux",
+    "inputs": [
+      "magnetic_field",
+      "area",
+      "angle"
+    ],
+    "equation": "Φ=BAcosθ",
+    "expr": "x[\"magnetic_field\"]*x[\"area\"]*math.cos(x[\"angle\"]*math.pi/180))",
+    "assumptions": []
+  },
+  {
+    "id": "faraday_emf",
+    "domain": "magnetism",
+    "name": "Induced EMF magnitude",
+    "target": "emf",
+    "inputs": [
+      "flux_change",
+      "time"
+    ],
+    "equation": "ε=|ΔΦ|/Δt",
+    "expr": "abs(x[\"flux_change\"])/x[\"time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "spring_period",
+    "domain": "oscillations",
+    "name": "Mass-spring period",
+    "target": "period",
+    "inputs": [
+      "mass",
+      "spring_constant"
+    ],
+    "equation": "T=2π√(m/k)",
+    "expr": "2*math.pi*math.sqrt(x[\"mass\"]/x[\"spring_constant\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "pendulum_period",
+    "domain": "oscillations",
+    "name": "Simple pendulum period",
+    "target": "period",
+    "inputs": [
+      "length",
+      "gravity"
+    ],
+    "equation": "T=2π√(l/g)",
+    "expr": "2*math.pi*math.sqrt(x[\"length\"]/x[\"gravity\"])",
+    "assumptions": [
+      "Small-angle approximation"
+    ]
+  },
+  {
+    "id": "frequency_period",
+    "domain": "waves",
+    "name": "Frequency",
+    "target": "frequency",
+    "inputs": [
+      "period"
+    ],
+    "equation": "f=1/T",
+    "expr": "1/x[\"period\"])",
+    "assumptions": []
+  },
+  {
+    "id": "period_frequency",
+    "domain": "waves",
+    "name": "Period",
+    "target": "period",
+    "inputs": [
+      "frequency"
+    ],
+    "equation": "T=1/f",
+    "expr": "1/x[\"frequency\"])",
+    "assumptions": []
+  },
+  {
+    "id": "wave_speed",
+    "domain": "waves",
+    "name": "Wave speed",
+    "target": "velocity",
+    "inputs": [
+      "wavelength",
+      "frequency"
+    ],
+    "equation": "v=λf",
+    "expr": "x[\"wavelength\"]*x[\"frequency\"])",
+    "assumptions": []
+  },
+  {
+    "id": "wavelength",
+    "domain": "waves",
+    "name": "Wavelength",
+    "target": "wavelength",
+    "inputs": [
+      "wave_speed",
+      "frequency"
+    ],
+    "equation": "λ=v/f",
+    "expr": "x[\"wave_speed\"]/x[\"frequency\"])",
+    "assumptions": []
+  },
+  {
+    "id": "sound_level",
+    "domain": "waves",
+    "name": "Sound level",
+    "target": "sound_level",
+    "inputs": [
+      "intensity",
+      "reference_intensity"
+    ],
+    "equation": "L=10log10(I/I0)",
+    "expr": "10*math.log10(x[\"intensity\"]/x[\"reference_intensity\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "doppler",
+    "domain": "waves",
+    "name": "Doppler sound frequency",
+    "target": "frequency",
+    "inputs": [
+      "frequency",
+      "sound_speed",
+      "observer_speed",
+      "source_speed"
+    ],
+    "equation": "f′=f(v+vo)/(v-vs)",
+    "expr": "x[\"frequency\"]*(x[\"sound_speed\"]+x[\"observer_speed\"])/(x[\"sound_speed\"]-x[\"source_speed\"])",
+    "assumptions": [
+      "Speeds positive toward each other"
+    ]
+  },
+  {
+    "id": "snell",
+    "domain": "optics",
+    "name": "Snell law refracted angle",
+    "target": "angle",
+    "inputs": [
+      "index1",
+      "angle1",
+      "index2"
+    ],
+    "equation": "θ2=asin(n1sinθ1/n2)",
+    "expr": "math.asin(max(-1,min(1,x[\"index1\"]*math.sin(x[\"angle1\"]*math.pi/180)/x[\"index2\"])))*180/math.pi)",
+    "assumptions": []
+  },
+  {
+    "id": "thin_lens",
+    "domain": "optics",
+    "name": "Thin-lens image distance",
+    "target": "image_distance",
+    "inputs": [
+      "focal_length",
+      "object_distance"
+    ],
+    "equation": "1/f=1/do+1/di",
+    "expr": "1/(1/x[\"focal_length\"]-1/x[\"object_distance\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "lens_power",
+    "domain": "optics",
+    "name": "Lens power",
+    "target": "optical_power",
+    "inputs": [
+      "focal_length"
+    ],
+    "equation": "D=1/f(m)",
+    "expr": "1/x[\"focal_length\"])",
+    "assumptions": []
+  },
+  {
+    "id": "magnification",
+    "domain": "optics",
+    "name": "Magnification",
+    "target": "magnification",
+    "inputs": [
+      "image_distance",
+      "object_distance"
+    ],
+    "equation": "M=-di/do",
+    "expr": "-x[\"image_distance\"]/x[\"object_distance\"])",
+    "assumptions": []
+  },
+  {
+    "id": "young_fringe",
+    "domain": "optics",
+    "name": "Young fringe spacing",
+    "target": "fringe_spacing",
+    "inputs": [
+      "wavelength",
+      "screen_distance",
+      "slit_separation"
+    ],
+    "equation": "i=λL/d",
+    "expr": "x[\"wavelength\"]*x[\"screen_distance\"]/x[\"slit_separation\"])",
+    "assumptions": []
+  },
+  {
+    "id": "photon_energy",
+    "domain": "modern",
+    "name": "Photon energy",
+    "target": "energy",
+    "inputs": [
+      "planck_constant",
+      "frequency"
+    ],
+    "equation": "E=hf",
+    "expr": "x[\"planck_constant\"]*x[\"frequency\"])",
+    "assumptions": []
+  },
+  {
+    "id": "photon_wavelength",
+    "domain": "modern",
+    "name": "Photon energy by wavelength",
+    "target": "energy",
+    "inputs": [
+      "planck_constant",
+      "speed_of_light",
+      "wavelength"
+    ],
+    "equation": "E=hc/λ",
+    "expr": "x[\"planck_constant\"]*x[\"speed_of_light\"]/x[\"wavelength\"])",
+    "assumptions": []
+  },
+  {
+    "id": "debroglie",
+    "domain": "modern",
+    "name": "De Broglie wavelength",
+    "target": "wavelength",
+    "inputs": [
+      "planck_constant",
+      "momentum"
+    ],
+    "equation": "λ=h/p",
+    "expr": "x[\"planck_constant\"]/x[\"momentum\"])",
+    "assumptions": []
+  },
+  {
+    "id": "mass_energy",
+    "domain": "modern",
+    "name": "Mass-energy",
+    "target": "energy",
+    "inputs": [
+      "mass",
+      "speed_of_light"
+    ],
+    "equation": "E=mc²",
+    "expr": "x[\"mass\"]*x[\"speed_of_light\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "lorentz",
+    "domain": "modern",
+    "name": "Lorentz factor",
+    "target": "lorentz_factor",
+    "inputs": [
+      "velocity",
+      "speed_of_light"
+    ],
+    "equation": "γ=1/sqrt(1-v²/c²)",
+    "expr": "1/math.sqrt(1-(x[\"velocity\"]/x[\"speed_of_light\"])**2))",
+    "assumptions": []
+  },
+  {
+    "id": "radioactive_decay",
+    "domain": "nuclear",
+    "name": "Remaining radioactive amount",
+    "target": "remaining_quantity",
+    "inputs": [
+      "initial_quantity",
+      "half_life",
+      "time"
+    ],
+    "equation": "N=N0·2^(-t/T½)",
+    "expr": "x[\"initial_quantity\"]*2**(-x[\"time\"]/x[\"half_life\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "activity",
+    "domain": "nuclear",
+    "name": "Radioactive activity",
+    "target": "activity",
+    "inputs": [
+      "decay_constant",
+      "number_of_nuclei"
+    ],
+    "equation": "A=λN",
+    "expr": "x[\"decay_constant\"]*x[\"number_of_nuclei\"])",
+    "assumptions": []
+  },
+  {
+    "id": "half_life",
+    "domain": "nuclear",
+    "name": "Half-life",
+    "target": "half_life",
+    "inputs": [
+      "decay_constant"
+    ],
+    "equation": "T½=ln2/λ",
+    "expr": "math.log(2)/x[\"decay_constant\"])",
+    "assumptions": []
+  },
+  {
+    "id": "binding_energy",
+    "domain": "nuclear",
+    "name": "Binding energy",
+    "target": "energy",
+    "inputs": [
+      "mass_defect",
+      "speed_of_light"
+    ],
+    "equation": "E=Δmc²",
+    "expr": "x[\"mass_defect\"]*x[\"speed_of_light\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "orbital_speed",
+    "domain": "astronomy",
+    "name": "Circular orbital speed",
+    "target": "velocity",
+    "inputs": [
+      "gravitational_constant",
+      "central_mass",
+      "orbital_radius"
+    ],
+    "equation": "v=√(GM/r)",
+    "expr": "math.sqrt(x[\"gravitational_constant\"]*x[\"central_mass\"]/x[\"orbital_radius\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "escape_speed",
+    "domain": "astronomy",
+    "name": "Escape speed",
+    "target": "velocity",
+    "inputs": [
+      "gravitational_constant",
+      "central_mass",
+      "radius"
+    ],
+    "equation": "ve=√(2GM/r)",
+    "expr": "math.sqrt(2*x[\"gravitational_constant\"]*x[\"central_mass\"]/x[\"radius\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "kepler_period",
+    "domain": "astronomy",
+    "name": "Orbital period",
+    "target": "period",
+    "inputs": [
+      "gravitational_constant",
+      "central_mass",
+      "orbital_radius"
+    ],
+    "equation": "T=2π√(r³/GM)",
+    "expr": "2*math.pi*math.sqrt(x[\"orbital_radius\"]**3/(x[\"gravitational_constant\"]*x[\"central_mass\"])))",
+    "assumptions": []
+  },
+  {
+    "id": "hubble_distance",
+    "domain": "astronomy",
+    "name": "Hubble-law distance",
+    "target": "distance",
+    "inputs": [
+      "recession_velocity",
+      "hubble_constant"
+    ],
+    "equation": "d=v/H0",
+    "expr": "x[\"recession_velocity\"]/x[\"hubble_constant\"])",
+    "assumptions": []
+  },
+  {
+    "id": "stress",
+    "domain": "engineering",
+    "name": "Stress",
+    "target": "stress",
+    "inputs": [
+      "force",
+      "area"
+    ],
+    "equation": "σ=F/A",
+    "expr": "x[\"force\"]/x[\"area\"])",
+    "assumptions": []
+  },
+  {
+    "id": "strain",
+    "domain": "engineering",
+    "name": "Strain",
+    "target": "strain",
+    "inputs": [
+      "length_change",
+      "initial_length"
+    ],
+    "equation": "ε=ΔL/L0",
+    "expr": "x[\"length_change\"]/x[\"initial_length\"])",
+    "assumptions": []
+  },
+  {
+    "id": "young_modulus",
+    "domain": "engineering",
+    "name": "Young modulus",
+    "target": "young_modulus",
+    "inputs": [
+      "stress",
+      "strain"
+    ],
+    "equation": "E=σ/ε",
+    "expr": "x[\"stress\"]/x[\"strain\"])",
+    "assumptions": []
+  },
+  {
+    "id": "torque",
+    "domain": "engineering",
+    "name": "Torque",
+    "target": "torque",
+    "inputs": [
+      "force",
+      "lever_arm",
+      "angle"
+    ],
+    "equation": "τ=rFsinθ",
+    "expr": "x[\"lever_arm\"]*x[\"force\"]*math.sin(x[\"angle\"]*math.pi/180))",
+    "assumptions": []
+  },
+  {
+    "id": "hydraulic_force",
+    "domain": "engineering",
+    "name": "Hydraulic force",
+    "target": "force2",
+    "inputs": [
+      "force1",
+      "area1",
+      "area2"
+    ],
+    "equation": "F2=F1A2/A1",
+    "expr": "x[\"force1\"]*x[\"area2\"]/x[\"area1\"])",
+    "assumptions": []
+  },
+  {
+    "id": "coulomb_force",
+    "domain": "electricity",
+    "name": "Coulomb force",
+    "target": "force",
+    "inputs": [
+      "charge1",
+      "charge2",
+      "distance",
+      "coulomb_constant"
+    ],
+    "equation": "F=ke|q1q2|/r²",
+    "expr": "x[\"coulomb_constant\"]*abs(x[\"charge1\"]*x[\"charge2\"])/x[\"distance\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "electric_field",
+    "domain": "electricity",
+    "name": "Point charge electric field",
+    "target": "electric_field",
+    "inputs": [
+      "charge",
+      "distance",
+      "coulomb_constant"
+    ],
+    "equation": "E=ke|q|/r²",
+    "expr": "x[\"coulomb_constant\"]*abs(x[\"charge\"])/x[\"distance\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "electric_potential",
+    "domain": "electricity",
+    "name": "Electric potential",
+    "target": "electric_potential",
+    "inputs": [
+      "energy",
+      "charge"
+    ],
+    "equation": "V=E/q",
+    "expr": "x[\"energy\"]/x[\"charge\"])",
+    "assumptions": []
+  },
+  {
+    "id": "electric_work",
+    "domain": "electricity",
+    "name": "Electrical work",
+    "target": "energy",
+    "inputs": [
+      "charge",
+      "voltage"
+    ],
+    "equation": "W=qU",
+    "expr": "x[\"charge\"]*x[\"voltage\"])",
+    "assumptions": []
+  },
+  {
+    "id": "capacitor_parallel_plate",
+    "domain": "electricity",
+    "name": "Parallel plate capacitance",
+    "target": "capacitance",
+    "inputs": [
+      "permittivity",
+      "area",
+      "plate_distance"
+    ],
+    "equation": "C=εA/d",
+    "expr": "x[\"permittivity\"]*x[\"area\"]/x[\"plate_distance\"])",
+    "assumptions": []
+  },
+  {
+    "id": "capacitor_series",
+    "domain": "electricity",
+    "name": "Series capacitors",
+    "target": "capacitance",
+    "inputs": [
+      "capacitance1",
+      "capacitance2"
+    ],
+    "equation": "Ceq=(C1C2)/(C1+C2)",
+    "expr": "x[\"capacitance1\"]*x[\"capacitance2\"]/(x[\"capacitance1\"]+x[\"capacitance2\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "capacitor_parallel",
+    "domain": "electricity",
+    "name": "Parallel capacitors",
+    "target": "capacitance",
+    "inputs": [
+      "capacitance1",
+      "capacitance2"
+    ],
+    "equation": "Ceq=C1+C2",
+    "expr": "x[\"capacitance1\"]+x[\"capacitance2\"])",
+    "assumptions": []
+  },
+  {
+    "id": "resistors_series",
+    "domain": "electricity",
+    "name": "Series resistors",
+    "target": "resistance",
+    "inputs": [
+      "resistance1",
+      "resistance2"
+    ],
+    "equation": "Req=R1+R2",
+    "expr": "x[\"resistance1\"]+x[\"resistance2\"])",
+    "assumptions": []
+  },
+  {
+    "id": "resistors_parallel",
+    "domain": "electricity",
+    "name": "Parallel resistors",
+    "target": "resistance",
+    "inputs": [
+      "resistance1",
+      "resistance2"
+    ],
+    "equation": "Req=R1R2/(R1+R2)",
+    "expr": "x[\"resistance1\"]*x[\"resistance2\"]/(x[\"resistance1\"]+x[\"resistance2\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "source_current",
+    "domain": "electricity",
+    "name": "Source current with internal resistance",
+    "target": "current",
+    "inputs": [
+      "emf",
+      "resistance",
+      "internal_resistance"
+    ],
+    "equation": "I=ε/(R+r)",
+    "expr": "x[\"emf\"]/(x[\"resistance\"]+x[\"internal_resistance\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "terminal_voltage",
+    "domain": "electricity",
+    "name": "Source terminal voltage",
+    "target": "voltage",
+    "inputs": [
+      "emf",
+      "current",
+      "internal_resistance"
+    ],
+    "equation": "U=ε-Ir",
+    "expr": "x[\"emf\"]-x[\"current\"]*x[\"internal_resistance\"])",
+    "assumptions": []
+  },
+  {
+    "id": "magnetic_field_wire",
+    "domain": "magnetism",
+    "name": "Magnetic field of straight wire",
+    "target": "magnetic_field",
+    "inputs": [
+      "permeability",
+      "current",
+      "distance"
+    ],
+    "equation": "B=μI/(2πr)",
+    "expr": "x[\"permeability\"]*x[\"current\"]/(2*math.pi*x[\"distance\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "solenoid_field",
+    "domain": "magnetism",
+    "name": "Solenoid magnetic field",
+    "target": "magnetic_field",
+    "inputs": [
+      "permeability",
+      "turns_per_length",
+      "current"
+    ],
+    "equation": "B=μnI",
+    "expr": "x[\"permeability\"]*x[\"turns_per_length\"]*x[\"current\"])",
+    "assumptions": []
+  },
+  {
+    "id": "lc_period",
+    "domain": "electromagnetism",
+    "name": "LC period",
+    "target": "period",
+    "inputs": [
+      "inductance",
+      "capacitance"
+    ],
+    "equation": "T=2π√LC",
+    "expr": "2*math.pi*math.sqrt(x[\"inductance\"]*x[\"capacitance\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "lc_frequency",
+    "domain": "electromagnetism",
+    "name": "LC frequency",
+    "target": "frequency",
+    "inputs": [
+      "inductance",
+      "capacitance"
+    ],
+    "equation": "f=1/(2π√LC)",
+    "expr": "1/(2*math.pi*math.sqrt(x[\"inductance\"]*x[\"capacitance\"])))",
+    "assumptions": []
+  },
+  {
+    "id": "inductor_energy",
+    "domain": "electromagnetism",
+    "name": "Inductor energy",
+    "target": "energy",
+    "inputs": [
+      "inductance",
+      "current"
+    ],
+    "equation": "E=LI²/2",
+    "expr": ".5*x[\"inductance\"]*x[\"current\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "oscillation_max_velocity",
+    "domain": "oscillations",
+    "name": "SHM maximum speed",
+    "target": "velocity",
+    "inputs": [
+      "amplitude",
+      "angular_frequency"
+    ],
+    "equation": "vmax=Aω",
+    "expr": "x[\"amplitude\"]*x[\"angular_frequency\"])",
+    "assumptions": []
+  },
+  {
+    "id": "oscillation_max_acceleration",
+    "domain": "oscillations",
+    "name": "SHM maximum acceleration",
+    "target": "acceleration",
+    "inputs": [
+      "amplitude",
+      "angular_frequency"
+    ],
+    "equation": "amax=Aω²",
+    "expr": "x[\"amplitude\"]*x[\"angular_frequency\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "oscillation_energy",
+    "domain": "oscillations",
+    "name": "SHM total energy",
+    "target": "energy",
+    "inputs": [
+      "mass",
+      "angular_frequency",
+      "amplitude"
+    ],
+    "equation": "E=mω²A²/2",
+    "expr": ".5*x[\"mass\"]*x[\"angular_frequency\"]**2*x[\"amplitude\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "sound_intensity",
+    "domain": "waves",
+    "name": "Sound intensity",
+    "target": "intensity",
+    "inputs": [
+      "power",
+      "area"
+    ],
+    "equation": "I=P/A",
+    "expr": "x[\"power\"]/x[\"area\"])",
+    "assumptions": []
+  },
+  {
+    "id": "spherical_sound_intensity",
+    "domain": "waves",
+    "name": "Spherical sound intensity",
+    "target": "intensity",
+    "inputs": [
+      "power",
+      "radius"
+    ],
+    "equation": "I=P/(4πr²)",
+    "expr": "x[\"power\"]/(4*math.pi*x[\"radius\"]**2))",
+    "assumptions": []
+  },
+  {
+    "id": "open_pipe_fundamental",
+    "domain": "waves",
+    "name": "Open pipe fundamental",
+    "target": "frequency",
+    "inputs": [
+      "sound_speed",
+      "length"
+    ],
+    "equation": "f=v/(2L)",
+    "expr": "x[\"sound_speed\"]/(2*x[\"length\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "closed_pipe_fundamental",
+    "domain": "waves",
+    "name": "Closed pipe fundamental",
+    "target": "frequency",
+    "inputs": [
+      "sound_speed",
+      "length"
+    ],
+    "equation": "f=v/(4L)",
+    "expr": "x[\"sound_speed\"]/(4*x[\"length\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "diffraction_minimum",
+    "domain": "optics",
+    "name": "Single slit minimum",
+    "target": "angle",
+    "inputs": [
+      "wavelength",
+      "slit_width",
+      "order"
+    ],
+    "equation": "sinθ=mλ/a",
+    "expr": "math.asin(max(-1,min(1,x[\"order\"]*x[\"wavelength\"]/x[\"slit_width\"])))*180/math.pi)",
+    "assumptions": []
+  },
+  {
+    "id": "malus",
+    "domain": "optics",
+    "name": "Malus law",
+    "target": "intensity",
+    "inputs": [
+      "initial_intensity",
+      "angle"
+    ],
+    "equation": "I=I0cos²θ",
+    "expr": "x[\"initial_intensity\"]*math.cos(x[\"angle\"]*math.pi/180)**2)",
+    "assumptions": []
+  },
+  {
+    "id": "photoelectric",
+    "domain": "modern",
+    "name": "Photoelectric kinetic energy",
+    "target": "kinetic_energy",
+    "inputs": [
+      "planck_constant",
+      "frequency",
+      "work_function"
+    ],
+    "equation": "K=hf-φ",
+    "expr": "x[\"planck_constant\"]*x[\"frequency\"]-x[\"work_function\"])",
+    "assumptions": []
+  },
+  {
+    "id": "stopping_voltage",
+    "domain": "modern",
+    "name": "Stopping voltage",
+    "target": "voltage",
+    "inputs": [
+      "kinetic_energy",
+      "elementary_charge"
+    ],
+    "equation": "Vs=K/e",
+    "expr": "x[\"kinetic_energy\"]/x[\"elementary_charge\"])",
+    "assumptions": []
+  },
+  {
+    "id": "relativistic_energy",
+    "domain": "relativity",
+    "name": "Relativistic energy",
+    "target": "energy",
+    "inputs": [
+      "lorentz_factor",
+      "mass",
+      "speed_of_light"
+    ],
+    "equation": "E=γmc²",
+    "expr": "x[\"lorentz_factor\"]*x[\"mass\"]*x[\"speed_of_light\"]**2)",
+    "assumptions": []
+  },
+  {
+    "id": "time_dilation",
+    "domain": "relativity",
+    "name": "Time dilation",
+    "target": "time",
+    "inputs": [
+      "lorentz_factor",
+      "proper_time"
+    ],
+    "equation": "Δt=γΔt0",
+    "expr": "x[\"lorentz_factor\"]*x[\"proper_time\"])",
+    "assumptions": []
+  },
+  {
+    "id": "length_contraction",
+    "domain": "relativity",
+    "name": "Length contraction",
+    "target": "length",
+    "inputs": [
+      "proper_length",
+      "lorentz_factor"
+    ],
+    "equation": "L=L0/γ",
+    "expr": "x[\"proper_length\"]/x[\"lorentz_factor\"])",
+    "assumptions": []
+  },
+  {
+    "id": "nuclear_mass_defect",
+    "domain": "nuclear",
+    "name": "Nuclear mass defect",
+    "target": "mass_defect",
+    "inputs": [
+      "proton_count",
+      "neutron_count",
+      "proton_mass",
+      "neutron_mass",
+      "nucleus_mass"
+    ],
+    "equation": "Δm=Zmp+Nmn-m",
+    "expr": "x[\"proton_count\"]*x[\"proton_mass\"]+x[\"neutron_count\"]*x[\"neutron_mass\"]-x[\"nucleus_mass\"])",
+    "assumptions": []
+  },
+  {
+    "id": "hubble_velocity",
+    "domain": "astronomy",
+    "name": "Hubble recession velocity",
+    "target": "velocity",
+    "inputs": [
+      "hubble_constant",
+      "distance"
+    ],
+    "equation": "v=H0d",
+    "expr": "x[\"hubble_constant\"]*x[\"distance\"])",
+    "assumptions": []
+  },
+  {
+    "id": "luminosity_flux",
+    "domain": "astronomy",
+    "name": "Flux from luminosity",
+    "target": "flux",
+    "inputs": [
+      "luminosity",
+      "distance"
+    ],
+    "equation": "F=L/(4πd²)",
+    "expr": "x[\"luminosity\"]/(4*math.pi*x[\"distance\"]**2))",
+    "assumptions": []
+  },
+  {
+    "id": "bernoulli_velocity",
+    "domain": "fluids",
+    "name": "Bernoulli speed from pressure difference",
+    "target": "velocity",
+    "inputs": [
+      "pressure_difference",
+      "density"
+    ],
+    "equation": "v=√(2Δp/ρ)",
+    "expr": "math.sqrt(2*x[\"pressure_difference\"]/x[\"density\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "thermal_conduction",
+    "domain": "thermal",
+    "name": "Conductive heat transfer",
+    "target": "heat",
+    "inputs": [
+      "thermal_conductivity",
+      "area",
+      "temperature_difference",
+      "thickness",
+      "time"
+    ],
+    "equation": "Q=kAΔTt/L",
+    "expr": "x[\"thermal_conductivity\"]*x[\"area\"]*x[\"temperature_difference\"]*x[\"time\"]/x[\"thickness\"])",
+    "assumptions": []
+  },
+  {
+    "id": "stefan_boltzmann",
+    "domain": "thermal",
+    "name": "Thermal radiation power",
+    "target": "power",
+    "inputs": [
+      "emissivity",
+      "stefan_boltzmann_constant",
+      "area",
+      "temperature"
+    ],
+    "equation": "P=εσAT⁴",
+    "expr": "x[\"emissivity\"]*x[\"stefan_boltzmann_constant\"]*x[\"area\"]*x[\"temperature\"]**4)",
+    "assumptions": []
+  },
+  {
+    "id": "carnot_efficiency",
+    "domain": "thermal",
+    "name": "Carnot efficiency",
+    "target": "efficiency",
+    "inputs": [
+      "cold_temperature",
+      "hot_temperature"
+    ],
+    "equation": "η=100(1-Tc/Th)",
+    "expr": "100*(1-x[\"cold_temperature\"]/x[\"hot_temperature\"]))",
+    "assumptions": []
+  },
+  {
+    "id": "entropy",
+    "domain": "thermal",
+    "name": "Entropy change",
+    "target": "entropy",
+    "inputs": [
+      "heat",
+      "temperature"
+    ],
+    "equation": "ΔS=Q/T",
+    "expr": "x[\"heat\"]/x[\"temperature\"])",
+    "assumptions": []
+  },
+  {
+    "id": "internal_energy_monatomic",
+    "domain": "thermal",
+    "name": "Monatomic ideal gas internal energy",
+    "target": "energy",
+    "inputs": [
+      "moles",
+      "gas_constant",
+      "temperature"
+    ],
+    "equation": "U=3nRT/2",
+    "expr": "1.5*x[\"moles\"]*x[\"gas_constant\"]*x[\"temperature\"])",
+    "assumptions": []
+  },
+  {
+    "id": "constant_gravity",
+    "domain": "constants",
+    "name": "Constant gravity",
+    "target": "gravity",
+    "inputs": [],
+    "equation": "gravity=9.80665",
+    "expr": "9.80665",
+    "assumptions": []
+  },
+  {
+    "id": "constant_speed_of_light",
+    "domain": "constants",
+    "name": "Constant speed_of_light",
+    "target": "speed_of_light",
+    "inputs": [],
+    "equation": "speed_of_light=299792458",
+    "expr": "299792458",
+    "assumptions": []
+  },
+  {
+    "id": "constant_gravitational_constant",
+    "domain": "constants",
+    "name": "Constant gravitational_constant",
+    "target": "gravitational_constant",
+    "inputs": [],
+    "equation": "gravitational_constant=6.6743e-11",
+    "expr": "6.6743e-11",
+    "assumptions": []
+  },
+  {
+    "id": "constant_planck_constant",
+    "domain": "constants",
+    "name": "Constant planck_constant",
+    "target": "planck_constant",
+    "inputs": [],
+    "equation": "planck_constant=6.62607015e-34",
+    "expr": "6.62607015e-34",
+    "assumptions": []
+  },
+  {
+    "id": "constant_boltzmann_constant",
+    "domain": "constants",
+    "name": "Constant boltzmann_constant",
+    "target": "boltzmann_constant",
+    "inputs": [],
+    "equation": "boltzmann_constant=1.380649e-23",
+    "expr": "1.380649e-23",
+    "assumptions": []
+  },
+  {
+    "id": "constant_elementary_charge",
+    "domain": "constants",
+    "name": "Constant elementary_charge",
+    "target": "elementary_charge",
+    "inputs": [],
+    "equation": "elementary_charge=1.602176634e-19",
+    "expr": "1.602176634e-19",
+    "assumptions": []
+  },
+  {
+    "id": "constant_gas_constant",
+    "domain": "constants",
+    "name": "Constant gas_constant",
+    "target": "gas_constant",
+    "inputs": [],
+    "equation": "gas_constant=8.314462618",
+    "expr": "8.314462618",
+    "assumptions": []
+  },
+  {
+    "id": "constant_avogadro_constant",
+    "domain": "constants",
+    "name": "Constant avogadro_constant",
+    "target": "avogadro_constant",
+    "inputs": [],
+    "equation": "avogadro_constant=6.02214076e+23",
+    "expr": "6.02214076e+23",
+    "assumptions": []
+  },
+  {
+    "id": "constant_coulomb_constant",
+    "domain": "constants",
+    "name": "Constant coulomb_constant",
+    "target": "coulomb_constant",
+    "inputs": [],
+    "equation": "coulomb_constant=8987551792.3",
+    "expr": "8987551792.3",
+    "assumptions": []
+  },
+  {
+    "id": "constant_stefan_boltzmann_constant",
+    "domain": "constants",
+    "name": "Constant stefan_boltzmann_constant",
+    "target": "stefan_boltzmann_constant",
+    "inputs": [],
+    "equation": "stefan_boltzmann_constant=5.670374419e-8",
+    "expr": "5.670374419e-8",
+    "assumptions": []
+  }
+]
+UNIT_FACTORS = {
+  "time": {
+    "s": 1,
+    "sec": 1,
+    "min": 60,
+    "h": 3600,
+    "ms": 0.001
+  },
+  "distance": {
+    "m": 1,
+    "km": 1000,
+    "cm": 0.01,
+    "mm": 0.001,
+    "ft": 0.3048,
+    "mi": 1609.344
+  },
+  "height": {
+    "m": 1,
+    "km": 1000,
+    "cm": 0.01,
+    "mm": 0.001,
+    "ft": 0.3048
+  },
+  "radius": {
+    "m": 1,
+    "km": 1000,
+    "cm": 0.01,
+    "mm": 0.001
+  },
+  "mass": {
+    "kg": 1,
+    "g": 0.001,
+    "mg": 0.000001,
+    "tonne": 1000
+  },
+  "velocity": {
+    "m/s": 1,
+    "km/h": 0.2777777777777778,
+    "mph": 0.44704,
+    "ft/s": 0.3048
+  },
+  "initial_velocity": {
+    "m/s": 1,
+    "km/h": 0.2777777777777778
+  },
+  "final_velocity": {
+    "m/s": 1,
+    "km/h": 0.2777777777777778
+  },
+  "acceleration": {
+    "m/s2": 1,
+    "m/s^2": 1,
+    "g": 9.80665
+  },
+  "force": {
+    "N": 1,
+    "kN": 1000,
+    "lbf": 4.448221615
+  },
+  "pressure": {
+    "Pa": 1,
+    "kPa": 1000,
+    "bar": 100000,
+    "atm": 101325,
+    "psi": 6894.757293
+  },
+  "energy": {
+    "J": 1,
+    "kJ": 1000,
+    "cal": 4.184,
+    "kcal": 4184,
+    "kWh": 3600000,
+    "eV": 1.602176634e-19
+  },
+  "power": {
+    "W": 1,
+    "kW": 1000,
+    "hp": 745.699872
+  },
+  "volume": {
+    "m3": 1,
+    "m^3": 1,
+    "L": 0.001,
+    "ml": 0.000001
+  },
+  "area": {
+    "m2": 1,
+    "m^2": 1,
+    "cm2": 0.0001,
+    "mm2": 0.000001
+  },
+  "frequency": {
+    "Hz": 1,
+    "kHz": 1000,
+    "MHz": 1000000
+  },
+  "wavelength": {
+    "m": 1,
+    "nm": 1e-9,
+    "um": 0.000001,
+    "mm": 0.001
+  },
+  "voltage": {
+    "V": 1,
+    "mV": 0.001,
+    "kV": 1000
+  },
+  "current": {
+    "A": 1,
+    "mA": 0.001
+  },
+  "resistance": {
+    "ohm": 1,
+    "Ω": 1,
+    "kohm": 1000,
+    "kΩ": 1000
+  },
+  "density": {
+    "kg/m3": 1,
+    "g/cm3": 1000
+  },
+  "specific_heat": {
+    "J/(kg K)": 1,
+    "J/kgK": 1,
+    "kJ/(kg K)": 1000
+  },
+  "angle": {
+    "deg": 1,
+    "degree": 1,
+    "rad": 57.29577951308232
+  },
+  "angular_velocity": {
+    "rad/s": 1,
+    "rpm": 0.10471975511965977
+  },
+  "spring_constant": {
+    "N/m": 1,
+    "N/cm": 100
+  },
+  "magnetic_field": {
+    "T": 1,
+    "mT": 0.001
+  },
+  "charge": {
+    "C": 1,
+    "mC": 0.001,
+    "uC": 0.000001,
+    "nC": 1e-9
+  },
+  "mass_defect": {
+    "kg": 1,
+    "u": 1.6605390666e-27
+  },
+  "lever_arm": {
+    "m": 1,
+    "cm": 0.01,
+    "mm": 0.001
+  }
+}
+OUTPUT_UNITS = {
+  "velocity": "m/s",
+  "acceleration": "m/s²",
+  "force": "N",
+  "force2": "N",
+  "distance": "m",
+  "range": "m",
+  "height": "m",
+  "time": "s",
+  "period": "s",
+  "frequency": "Hz",
+  "energy": "J",
+  "work": "J",
+  "power": "W",
+  "pressure": "Pa",
+  "density": "kg/m³",
+  "flow_rate": "m³/s",
+  "heat": "J",
+  "temperature": "K/°C/°F",
+  "charge": "C",
+  "voltage": "V",
+  "current": "A",
+  "resistance": "Ω",
+  "capacitance": "F",
+  "momentum": "kg·m/s",
+  "impulse": "N·s",
+  "angular_velocity": "rad/s",
+  "angular_acceleration": "rad/s²",
+  "magnetic_flux": "Wb",
+  "emf": "V",
+  "wavelength": "m",
+  "image_distance": "m",
+  "optical_power": "D",
+  "fringe_spacing": "m",
+  "sound_level": "dB",
+  "angle": "degree",
+  "efficiency": "%",
+  "stress": "Pa",
+  "strain": "dimensionless",
+  "young_modulus": "Pa",
+  "torque": "N·m",
+  "gravity": "m/s²",
+  "speed_of_light": "m/s",
+  "gravitational_constant": "m³/(kg·s²)",
+  "planck_constant": "J·s",
+  "boltzmann_constant": "J/K",
+  "gas_constant": "J/(mol·K)",
+  "lorentz_factor": "dimensionless",
+  "half_life": "s",
+  "activity": "Bq",
+  "remaining_quantity": "same as input"
+}
+
+def _finite_number(value, name):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+        raise ValueError(f"{name} must be finite numeric.")
+    return float(value)
+
+def physics_calculate(args):
+    if not isinstance(args, dict):
+        raise ValueError("arguments must be an object.")
+    if args.get("list_formulas"):
+        return {"success": True, "formula_count": len(FORMULAS), "formulas": [{k:v for k,v in f.items() if k != "expr"} for f in FORMULAS]}
+    formula_id = str(args.get("formula_id") or "").strip()
+    target = str(args.get("target") or "").strip()
+    values = args.get("values") or {}
+    units = args.get("units") or {}
+    if not isinstance(values, dict) or not isinstance(units, dict):
+        raise ValueError("values and units must be objects.")
+    constants = {k:v for k,v in {"gravity":9.80665,"speed_of_light":299792458,"gravitational_constant":6.6743e-11,"planck_constant":6.62607015e-34,"boltzmann_constant":1.380649e-23,"elementary_charge":1.602176634e-19,"gas_constant":8.314462618,"avogadro_constant":6.02214076e+23,"coulomb_constant":8987551792.3,"stefan_boltzmann_constant":5.670374419e-8}.items()}
+    values = {**constants, **values}
+    if formula_id:
+        selected = next((f for f in FORMULAS if f["id"] == formula_id), None)
+        if selected is None:
+            raise ValueError("Unknown formula_id; call list_formulas=true to inspect the built-in catalog.")
+    else:
+        matches = [f for f in FORMULAS if (not target or target.casefold() in (f["target"].casefold(), f["name"].casefold())) and not [k for k in f["inputs"] if k not in values]]
+        if not matches:
+            raise ValueError("No matching formula. Provide formula_id or target plus all required numerical inputs.")
+        selected = matches[0]
+    missing = [k for k in selected["inputs"] if k not in values]
+    if missing:
+        raise ValueError("Missing inputs: " + ", ".join(missing))
+    x = {}
+    for key in selected["inputs"]:
+        numeric = _finite_number(values[key], key)
+        unit = units.get(key)
+        if unit is not None:
+            factors = UNIT_FACTORS.get(key)
+            if factors is None:
+                x[key] = numeric
+            elif unit not in factors:
+                raise ValueError(f"Unsupported unit {unit} for {key}.")
+            else:
+                x[key] = numeric * factors[unit]
+        else:
+            x[key] = numeric
+    try:
+        result = eval(selected["expr"], {"__builtins__": {}}, {"x":x,"math":math,"abs":abs,"max":max,"min":min})
+    except Exception as exc:
+        raise ValueError(f"Formula computation failed: {exc}") from None
+    if isinstance(result,bool) or not isinstance(result,(int,float)) or not math.isfinite(float(result)):
+        raise ValueError("Non-finite result. Check units, denominator and physical conditions.")
+    return {"success":True,"formula_id":selected["id"],"domain":selected["domain"],"formula_name":selected["name"],"target":selected["target"],"equation":selected["equation"],"inputs_si":x,"result":float(result),"output_unit":OUTPUT_UNITS.get(selected["target"],"SI"),"assumptions":selected.get("assumptions",[]),"formula_count":len(FORMULAS)}
