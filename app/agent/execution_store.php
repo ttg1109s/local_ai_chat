@@ -188,7 +188,7 @@ function lac_tool_execute_managed_locked(PDO $pdo,string $name,array $args,array
     if($canRetry){usleep(min(1000000,200000*(int)$base['attempt']));$base['attempt']++;$base['execution_id']=bin2hex(random_bytes(12));continue;}
     $result['tool_call_id']=$toolCallId;$result['execution_id']=$base['execution_id'];
     $pack=lac_data_pack_put($runId,$name,$base['execution_id'],$result);$reference=$pack['data_ref'];$result['result_id']=$pack['result_id']??null;$result['result_reference']=$reference;
-    if(function_exists('lac_agent_task_load')&&(lac_agent_task_load($runId)['state']??'')==='cancelled'){lac_data_pack_cleanup_run($runId);return ['ok'=>false,'tool'=>$name,'tool_call_id'=>$toolCallId,'error_code'=>'JOB_CANCELLED','error'=>'Job was cancelled; the Data Pack was revoked.','retryable'=>false];}
+    if(function_exists('lac_agent_task_load')&&(lac_agent_task_load($runId)['state']??'')==='cancelled'){return ['ok'=>false,'tool'=>$name,'tool_call_id'=>$toolCallId,'error_code'=>'JOB_CANCELLED','error'=>'Job was cancelled; the current result is not committed to the invocation ledger.','retryable'=>false];}
     lac_execution_result_store($runId,$toolCallId,$result);
     $record=lac_execution_read($runId,$toolCallId)??[];$record['result_reference']=$reference;
     lac_execution_write($runId,$toolCallId,$record);
@@ -196,7 +196,7 @@ function lac_tool_execute_managed_locked(PDO $pdo,string $name,array $args,array
    }
    $result['tool_call_id']=$toolCallId;$result['execution_id']=$base['execution_id'];
    $pack=lac_data_pack_put($runId,$name,$base['execution_id'],$result);$reference=$pack['data_ref'];$result['result_id']=$pack['result_id']??null;$result['result_reference']=$reference;
-   if(function_exists('lac_agent_task_load')&&(lac_agent_task_load($runId)['state']??'')==='cancelled'){lac_data_pack_cleanup_run($runId);return ['ok'=>false,'tool'=>$name,'tool_call_id'=>$toolCallId,'error_code'=>'JOB_CANCELLED','error'=>'Job was cancelled; the Data Pack was revoked.','retryable'=>false];}
+   if(function_exists('lac_agent_task_load')&&(lac_agent_task_load($runId)['state']??'')==='cancelled'){return ['ok'=>false,'tool'=>$name,'tool_call_id'=>$toolCallId,'error_code'=>'JOB_CANCELLED','error'=>'The current result is not committed to the invocation ledger because the Job was cancelled.','retryable'=>false];}
    lac_execution_transition($runId,$toolCallId,'RESULT_RECEIVED',['result_status'=>'success','result_reference'=>$reference]);
    lac_execution_result_store($runId,$toolCallId,$result);
    lac_execution_transition($runId,$toolCallId,'COMMITTED');
