@@ -2,7 +2,7 @@
 LACAttachmentUI.init(()=>current,message=>toast(message));
 async function refreshConversationAttachments(){return LACAttachmentUI.refresh(()=>current);}
 const {typesetMath}=window.LACChatRender;
-const {md}=window.LACChatMarkdown;
+const {md,esc}=window.LACChatMarkdown;
 let currentModelAlias='',generationModelLabel='Model';function modelLabel(){return generationModelLabel||currentModelAlias||'Model'}
 function formatHMS(ms){let s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return [h,m,sec].map(v=>String(v).padStart(2,'0')).join(':')}
 
