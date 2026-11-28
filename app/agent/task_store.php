@@ -31,15 +31,17 @@ function lac_agent_task_save(string $runId,string $state,array $data=[],?string 
   $history=$old['state_history']??[];
   if($from!==$state)$history[]=['state'=>$state,'at'=>date(DATE_ATOM)];
   $safe=['task_id'=>$runId,'run_id'=>$runId,'conversation_id'=>isset($data['conversation_id'])?(int)$data['conversation_id']:(int)($old['conversation_id']??0),'state'=>$state,'state_history'=>$history,'created_at'=>$old['created_at']??date(DATE_ATOM),'updated_at'=>date(DATE_ATOM),'started_at'=>$data['started_at']??$old['started_at']??null,
-   'step_count'=>(int)($data['step_count']??0),'tool_call_count'=>(int)($data['tool_call_count']??0),
-   'completed_tool_count'=>(int)($data['completed_tool_count']??0),'failed_tool_count'=>(int)($data['failed_tool_count']??0),
-   'available_tools'=>$data['available_tools']??[],'last_tool'=>$data['last_tool']??null,'last_error_code'=>$data['last_error_code']??null,
-   'elapsed_ms'=>(int)($data['elapsed_ms']??0),'limit'=>$data['limit']??null,
+   // Partial checkpoint updates (approval/cancellation/terminal endpoints) must not
+   // erase counters or execution metadata accumulated by the active Agent loop.
+   'step_count'=>(int)($data['step_count']??$old['step_count']??0),'tool_call_count'=>(int)($data['tool_call_count']??$old['tool_call_count']??0),
+   'completed_tool_count'=>(int)($data['completed_tool_count']??$old['completed_tool_count']??0),'failed_tool_count'=>(int)($data['failed_tool_count']??$old['failed_tool_count']??0),
+   'available_tools'=>$data['available_tools']??$old['available_tools']??[],'last_tool'=>$data['last_tool']??$old['last_tool']??null,'last_error_code'=>$data['last_error_code']??$old['last_error_code']??null,
+   'elapsed_ms'=>(int)($data['elapsed_ms']??$old['elapsed_ms']??0),'limit'=>$data['limit']??$old['limit']??null,
    'failure_phase'=>$data['failure_phase']??$old['failure_phase']??null,'failure_message'=>$data['failure_message']??$old['failure_message']??null,
    // Persist receipt metadata and Data Pack availability, never raw tool output.
    'tool_execution_state'=>$data['tool_execution_state']??$old['tool_execution_state']??null,
    'result_data_retained'=>(in_array($state,['failed','cancelled'],true)&&(int)($data['completed_tool_count']??$old['completed_tool_count']??0)>0),
-   'plan'=>$data['plan']??null,'node_results'=>$data['node_results']??[],'pending_approval'=>$data['pending_approval']??$old['pending_approval']??null,'checkpoint_version'=>3];
+   'plan'=>$data['plan']??$old['plan']??null,'node_results'=>$data['node_results']??$old['node_results']??[],'pending_approval'=>$data['pending_approval']??$old['pending_approval']??null,'checkpoint_version'=>3];
   // Terminal cleanup releases Data Pack bytes. Keep the immutable receipt/hash, but
   // make the persisted availability flag reflect the post-cleanup reality.
   $willReleasePacks=function_exists('lac_data_pack_cleanup_enabled')&&lac_data_pack_cleanup_enabled()&&in_array($state,['completed','failed','cancelled'],true) && !(in_array($state,['failed','cancelled'],true)&&(int)($data['completed_tool_count']??$old['completed_tool_count']??0)>0);
