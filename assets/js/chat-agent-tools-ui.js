@@ -1,0 +1,13 @@
+(()=>{
+'use strict';
+const $=window.LACChatCore.$,toast=window.LACChatCore.toast,csrf=window.LACChatCore.csrf,esc=window.LACChatMarkdown.esc;
+const TOOL_PREF_KEY='lac_agent_tools_v1';let agentToolCatalog=[];let enabledAgentTools=new Set(JSON.parse(localStorage.getItem(TOOL_PREF_KEY)||'[]'));
+function getEnabledAgentTools(){return [...enabledAgentTools]}
+let agentToolsSavePromise=Promise.resolve();function saveAgentTools(){localStorage.setItem(TOOL_PREF_KEY,JSON.stringify(getEnabledAgentTools()));const n=enabledAgentTools.size;$('#enabledToolCount').textContent=String(n);$('#toolWebsites').checked=enabledAgentTools.has('manage_websites');$('#webSearchToggle').checked=enabledAgentTools.has('search_web');const f=new FormData();f.append('_csrf',csrf);f.append('permissions',JSON.stringify(getEnabledAgentTools()));agentToolsSavePromise=fetch('api.php?action=agent_permissions_save',{method:'POST',body:f}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||'Could not save tool permissions');return j}).catch(e=>{toast(e.message);throw e});}
+function renderAgentTools(){const grid=$('#toolPermissionGrid');if(!grid)return;const groups={};agentToolCatalog.forEach(t=>(groups[t.group]??=[]).push(t));grid.innerHTML=Object.entries(groups).map(([group,tools])=>'<section class="tool-permission-group"><h4>'+esc(group)+'</h4>'+tools.map(t=>'<label class="tool-permission-row"><span class="tool-permission-copy"><b>'+esc(t.label)+'</b></span><input type="checkbox" data-agent-tool="'+esc(t.name)+'" '+(enabledAgentTools.has(t.name)?'checked':'')+'></label>').join('')+'</section>').join('');grid.querySelectorAll('[data-agent-tool]').forEach(el=>el.addEventListener('change',()=>{const id=el.dataset.agentTool;if(el.checked)enabledAgentTools.add(id);else enabledAgentTools.delete(id);saveAgentTools();}));saveAgentTools();}
+async function loadAgentTools(){try{const [r,p]=await Promise.all([fetch('api.php?action=tool_catalog',{cache:'no-store'}),fetch('api.php?action=agent_permissions',{cache:'no-store'})]);const j=await r.json(),pj=await p.json();if(!r.ok||!p.ok)throw Error(j.error||pj.error||'Could not load tools');agentToolCatalog=j.tools||[];enabledAgentTools=new Set(pj.permissions||[]);localStorage.setItem(TOOL_PREF_KEY,JSON.stringify(getEnabledAgentTools()));renderAgentTools();}catch(e){$('#toolPermissionGrid').textContent=e.message;}}
+
+
+function bind(){ $('#toolPanelToggle')?.addEventListener('click',()=>{const p=$('#toolPermissionPanel'),open=p.hidden;p.hidden=!open;$('#toolPanelToggle').setAttribute('aria-expanded',String(open));});$('#toolReset')?.addEventListener('click',()=>{enabledAgentTools.clear();renderAgentTools();});loadAgentTools();}
+window.LACChatAgentToolsUI={bind,getEnabledAgentTools,saveAgentTools};
+})();
