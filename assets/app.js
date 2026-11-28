@@ -1,6 +1,4 @@
-(()=>{const $=s=>document.querySelector(s),csrf=window.APP.csrf;let current=0,activeRun=null,activeMessageId=0,controller=null,lastAssistant=null,generationStarting=false,switchingModel=false;
-const post=async(action,data={})=>{let f=new FormData();f.append('_csrf',csrf);Object.entries(data).forEach(([k,v])=>f.append(k,v));let r=await fetch('api.php?action='+action,{method:'POST',body:f});let j=await r.json();if(!r.ok||j.error)throw Error(j.error||'Request failed');return j};
-let toastTimer=null;const toast=(t,duration=2800)=>{let e=$('#toast');if(!e)return;e.textContent=t;e.style.display='block';if(toastTimer)clearTimeout(toastTimer);toastTimer=null;if(duration>0)toastTimer=setTimeout(()=>{e.style.display='none';toastTimer=null},duration)};
+(()=>{const core=window.LACChatCore,$=core.$,csrf=core.csrf,post=core.post,toast=core.toast;let current=0,activeRun=null,activeMessageId=0,controller=null,lastAssistant=null,generationStarting=false,switchingModel=false;
 LACAttachmentUI.init(()=>current,message=>toast(message));
 async function refreshConversationAttachments(){return LACAttachmentUI.refresh(()=>current);}
 const mathEsc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]));
