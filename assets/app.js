@@ -1,4 +1,4 @@
-(()=>{const core=window.LACChatCore,$=core.$,csrf=core.csrf,post=core.post,toast=core.toast;let current=0,activeRun=null,activeMessageId=0,controller=null,lastAssistant=null,generationStarting=false;
+(()=>{const core=window.LACChatCore,$=core.$,csrf=core.csrf,post=core.post,toast=core.toast;let current=0,activeRun=null,activeMessageId=0,controller=null,lastAssistant=null,generationStarting=false,pendingStop=false;
 LACAttachmentUI.init(()=>current,message=>toast(message));
 window.LACChatHistoryUI.init({getCurrentId:()=>current,openConversation,post,toast,onDeleteCurrent:()=>{current=0;$('#messages').innerHTML='';$('#chatTitle').textContent='New chat'}});
 async function refreshConversationAttachments(){return LACAttachmentUI.refresh(()=>current);}
@@ -89,7 +89,7 @@ const setAssistantGenerationState=(body,label,state,preparing=false)=>generation
  try{if(!current)await createChat()}catch(e){generationStarting=false;toast(e.message);return}
  setGenerating(true);
  if(mode==='send'){$('#prompt').value='';$('#prompt').style.height='auto';addMessage('user',message)}
- let assistantBody=null,full='',baseText='',usage=null,finishReason=null,stopped=false,startedAt=Date.now(),timer=null,pendingStop=false,assistantMessageId=0;
+ let assistantBody=null,full='',baseText='',usage=null,finishReason=null,stopped=false,startedAt=Date.now(),timer=null,assistantMessageId=0;
  if(mode==='continue'&&lastAssistant){
    assistantBody=lastAssistant.querySelector('.message-content');
    baseText=assistantBody.innerText||'';
