@@ -1928,219 +1928,435 @@ FORMULAS = [
     "assumptions": []
   }
 ]
-UNIT_FACTORS = {
-  "time": {
-    "s": 1,
-    "sec": 1,
-    "min": 60,
-    "h": 3600,
-    "ms": 0.001
-  },
-  "distance": {
-    "m": 1,
-    "km": 1000,
-    "cm": 0.01,
-    "mm": 0.001,
-    "ft": 0.3048,
-    "mi": 1609.344
-  },
-  "height": {
-    "m": 1,
-    "km": 1000,
-    "cm": 0.01,
-    "mm": 0.001,
-    "ft": 0.3048
-  },
-  "radius": {
-    "m": 1,
-    "km": 1000,
-    "cm": 0.01,
-    "mm": 0.001
-  },
-  "mass": {
-    "kg": 1,
-    "g": 0.001,
-    "mg": 0.000001,
-    "tonne": 1000
-  },
-  "velocity": {
-    "m/s": 1,
-    "km/h": 0.2777777777777778,
-    "mph": 0.44704,
-    "ft/s": 0.3048
-  },
-  "initial_velocity": {
-    "m/s": 1,
-    "km/h": 0.2777777777777778
-  },
-  "final_velocity": {
-    "m/s": 1,
-    "km/h": 0.2777777777777778
-  },
-  "acceleration": {
-    "m/s2": 1,
-    "m/s^2": 1,
-    "g": 9.80665
-  },
-  "force": {
-    "N": 1,
-    "kN": 1000,
-    "lbf": 4.448221615
-  },
-  "pressure": {
-    "Pa": 1,
-    "kPa": 1000,
-    "bar": 100000,
-    "atm": 101325,
-    "psi": 6894.757293
-  },
-  "energy": {
-    "J": 1,
-    "kJ": 1000,
-    "cal": 4.184,
-    "kcal": 4184,
-    "kWh": 3600000,
-    "eV": 1.602176634e-19
-  },
-  "power": {
-    "W": 1,
-    "kW": 1000,
-    "hp": 745.699872
-  },
-  "volume": {
-    "m3": 1,
-    "m^3": 1,
-    "L": 0.001,
-    "ml": 0.000001
-  },
-  "area": {
-    "m2": 1,
-    "m^2": 1,
-    "cm2": 0.0001,
-    "mm2": 0.000001
-  },
-  "frequency": {
-    "Hz": 1,
-    "kHz": 1000,
-    "MHz": 1000000
-  },
-  "wavelength": {
-    "m": 1,
-    "nm": 1e-9,
-    "um": 0.000001,
-    "mm": 0.001
-  },
-  "voltage": {
-    "V": 1,
-    "mV": 0.001,
-    "kV": 1000
-  },
-  "current": {
-    "A": 1,
-    "mA": 0.001
-  },
-  "resistance": {
-    "ohm": 1,
-    "Ω": 1,
-    "kohm": 1000,
-    "kΩ": 1000
-  },
-  "density": {
-    "kg/m3": 1,
-    "g/cm3": 1000
-  },
-  "specific_heat": {
-    "J/(kg K)": 1,
-    "J/kgK": 1,
-    "kJ/(kg K)": 1000
-  },
-  "angle": {
-    "deg": 1,
-    "degree": 1,
-    "rad": 57.29577951308232
-  },
-  "angular_velocity": {
-    "rad/s": 1,
-    "rpm": 0.10471975511965977
-  },
-  "spring_constant": {
-    "N/m": 1,
-    "N/cm": 100
-  },
-  "magnetic_field": {
-    "T": 1,
-    "mT": 0.001
-  },
-  "charge": {
-    "C": 1,
-    "mC": 0.001,
-    "uC": 0.000001,
-    "nC": 1e-9
-  },
-  "mass_defect": {
-    "kg": 1,
-    "u": 1.6605390666e-27
-  },
-  "lever_arm": {
-    "m": 1,
-    "cm": 0.01,
-    "mm": 0.001
-  }
-}
-OUTPUT_UNITS = {
-  "velocity": "m/s",
-  "acceleration": "m/s²",
-  "force": "N",
-  "force2": "N",
-  "distance": "m",
-  "range": "m",
-  "height": "m",
+INPUT_UNITS = {
   "time": "s",
+  "distance": "m",
+  "height": "m",
+  "radius": "m",
+  "mass": "kg",
+  "velocity": "m/s",
+  "initial_velocity": "m/s",
+  "final_velocity": "m/s",
+  "acceleration": "m/s2",
+  "gravity": "m/s2",
+  "initial_speed": "m/s",
+  "angle": "deg",
+  "coefficient": "1",
+  "normal_force": "N",
+  "spring_constant": "N/m",
+  "displacement": "m",
+  "force": "N",
+  "delta_momentum": "kg·m/s",
+  "mass1": "kg",
+  "mass2": "kg",
+  "gravitational_constant": "m3/(kg·s2)",
+  "central_mass": "kg",
+  "work": "J",
+  "useful_output": "J",
+  "input": "J",
+  "final_angular_velocity": "rad/s",
+  "initial_angular_velocity": "rad/s",
+  "angular_velocity": "rad/s",
+  "volume": "m3",
+  "area": "m2",
+  "density": "kg/m3",
+  "depth": "m",
+  "fluid_density": "kg/m3",
+  "displaced_volume": "m3",
+  "area1": "m2",
+  "velocity1": "m/s",
+  "area2": "m2",
+  "specific_heat": "J/(kg·K)",
+  "temperature_change": "K",
+  "latent_heat": "J/kg",
+  "celsius": "degC",
+  "fahrenheit": "degF",
+  "initial_length": "m",
+  "expansion_coefficient": "1/K",
+  "moles": "mol",
+  "gas_constant": "J/(mol·K)",
+  "temperature": "K",
+  "pressure1": "Pa",
+  "volume1": "m3",
+  "volume2": "m3",
+  "temperature1": "K",
+  "temperature2": "K",
+  "current": "A",
+  "resistance": "ohm",
+  "voltage": "V",
+  "resistivity": "ohm·m",
+  "length": "m",
+  "power": "W",
+  "charge": "C",
+  "capacitance": "F",
+  "magnetic_field": "T",
+  "flux_change": "Wb",
   "period": "s",
   "frequency": "Hz",
-  "energy": "J",
-  "work": "J",
-  "power": "W",
-  "pressure": "Pa",
-  "density": "kg/m³",
-  "flow_rate": "m³/s",
-  "heat": "J",
-  "temperature": "K/°C/°F",
-  "charge": "C",
-  "voltage": "V",
-  "current": "A",
-  "resistance": "Ω",
-  "capacitance": "F",
-  "momentum": "kg·m/s",
-  "impulse": "N·s",
-  "angular_velocity": "rad/s",
-  "angular_acceleration": "rad/s²",
-  "magnetic_flux": "Wb",
-  "emf": "V",
   "wavelength": "m",
+  "wave_speed": "m/s",
+  "intensity": "W/m2",
+  "reference_intensity": "W/m2",
+  "sound_speed": "m/s",
+  "observer_speed": "m/s",
+  "source_speed": "m/s",
+  "index1": "1",
+  "angle1": "deg",
+  "index2": "1",
+  "focal_length": "m",
+  "object_distance": "m",
   "image_distance": "m",
-  "optical_power": "D",
-  "fringe_spacing": "m",
-  "sound_level": "dB",
-  "angle": "degree",
-  "efficiency": "%",
-  "stress": "Pa",
-  "strain": "dimensionless",
-  "young_modulus": "Pa",
-  "torque": "N·m",
-  "gravity": "m/s²",
-  "speed_of_light": "m/s",
-  "gravitational_constant": "m³/(kg·s²)",
+  "screen_distance": "m",
+  "slit_separation": "m",
   "planck_constant": "J·s",
-  "boltzmann_constant": "J/K",
-  "gas_constant": "J/(mol·K)",
-  "lorentz_factor": "dimensionless",
+  "speed_of_light": "m/s",
+  "momentum": "kg·m/s",
+  "initial_quantity": "1",
   "half_life": "s",
-  "activity": "Bq",
-  "remaining_quantity": "same as input"
+  "decay_constant": "1/s",
+  "number_of_nuclei": "1",
+  "mass_defect": "kg",
+  "orbital_radius": "m",
+  "recession_velocity": "m/s",
+  "hubble_constant": "1/s",
+  "length_change": "m",
+  "stress": "Pa",
+  "strain": "1",
+  "lever_arm": "m",
+  "force1": "N",
+  "charge1": "C",
+  "charge2": "C",
+  "coulomb_constant": "N·m2/C2",
+  "energy": "J",
+  "permittivity": "F/m",
+  "plate_distance": "m",
+  "capacitance1": "F",
+  "capacitance2": "F",
+  "resistance1": "ohm",
+  "resistance2": "ohm",
+  "emf": "V",
+  "internal_resistance": "ohm",
+  "permeability": "H/m",
+  "turns_per_length": "1/m",
+  "inductance": "H",
+  "amplitude": "m",
+  "angular_frequency": "rad/s",
+  "slit_width": "m",
+  "order": "1",
+  "initial_intensity": "W/m2",
+  "work_function": "J",
+  "kinetic_energy": "J",
+  "elementary_charge": "C",
+  "lorentz_factor": "1",
+  "proper_time": "s",
+  "proper_length": "m",
+  "proton_count": "1",
+  "neutron_count": "1",
+  "proton_mass": "kg",
+  "neutron_mass": "kg",
+  "nucleus_mass": "kg",
+  "luminosity": "W",
+  "pressure_difference": "Pa",
+  "thermal_conductivity": "W/(m·K)",
+  "temperature_difference": "K",
+  "thickness": "m",
+  "emissivity": "1",
+  "cold_temperature": "K",
+  "hot_temperature": "K",
+  "heat": "J"
 }
-
+OUTPUT_META = {
+  "velocity": [
+    "speed",
+    "m/s"
+  ],
+  "distance": [
+    "length",
+    "m"
+  ],
+  "acceleration": [
+    "acceleration",
+    "m/s2"
+  ],
+  "time": [
+    "time",
+    "s"
+  ],
+  "range": [
+    "length",
+    "m"
+  ],
+  "height": [
+    "length",
+    "m"
+  ],
+  "force": [
+    "force",
+    "N"
+  ],
+  "momentum": [
+    "momentum",
+    "kg·m/s"
+  ],
+  "impulse": [
+    "impulse",
+    "N·s"
+  ],
+  "gravity": [
+    "acceleration",
+    "m/s2"
+  ],
+  "work": [
+    "energy",
+    "J"
+  ],
+  "energy": [
+    "energy",
+    "J"
+  ],
+  "power": [
+    "power",
+    "W"
+  ],
+  "efficiency": [
+    "dimensionless",
+    "%"
+  ],
+  "angular_velocity": [
+    "angular_velocity",
+    "rad/s"
+  ],
+  "angular_acceleration": [
+    "angular_acceleration",
+    "rad/s2"
+  ],
+  "density": [
+    "density",
+    "kg/m3"
+  ],
+  "pressure": [
+    "pressure",
+    "Pa"
+  ],
+  "flow_rate": [
+    "flow_rate",
+    "m3/s"
+  ],
+  "velocity2": [
+    "speed",
+    "m/s"
+  ],
+  "heat": [
+    "energy",
+    "J"
+  ],
+  "temperature": [
+    "temperature",
+    "K"
+  ],
+  "length_change": [
+    "length",
+    "m"
+  ],
+  "pressure2": [
+    "pressure",
+    "Pa"
+  ],
+  "volume2": [
+    "volume",
+    "m3"
+  ],
+  "charge": [
+    "charge",
+    "C"
+  ],
+  "voltage": [
+    "voltage",
+    "V"
+  ],
+  "current": [
+    "current",
+    "A"
+  ],
+  "resistance": [
+    "resistance",
+    "ohm"
+  ],
+  "capacitance": [
+    "capacitance",
+    "F"
+  ],
+  "magnetic_flux": [
+    "magnetic_flux",
+    "Wb"
+  ],
+  "emf": [
+    "voltage",
+    "V"
+  ],
+  "period": [
+    "time",
+    "s"
+  ],
+  "frequency": [
+    "frequency",
+    "Hz"
+  ],
+  "wavelength": [
+    "length",
+    "m"
+  ],
+  "sound_level": [
+    "sound_level",
+    "dB"
+  ],
+  "angle": [
+    "angle",
+    "deg"
+  ],
+  "image_distance": [
+    "length",
+    "m"
+  ],
+  "optical_power": [
+    "optical_power",
+    "D"
+  ],
+  "magnification": [
+    "dimensionless",
+    "1"
+  ],
+  "fringe_spacing": [
+    "length",
+    "m"
+  ],
+  "lorentz_factor": [
+    "dimensionless",
+    "1"
+  ],
+  "remaining_quantity": [
+    "quantity",
+    "1"
+  ],
+  "activity": [
+    "activity",
+    "Bq"
+  ],
+  "half_life": [
+    "time",
+    "s"
+  ],
+  "stress": [
+    "pressure",
+    "Pa"
+  ],
+  "strain": [
+    "dimensionless",
+    "1"
+  ],
+  "young_modulus": [
+    "pressure",
+    "Pa"
+  ],
+  "torque": [
+    "torque",
+    "N·m"
+  ],
+  "force2": [
+    "force",
+    "N"
+  ],
+  "electric_field": [
+    "electric_field",
+    "V/m"
+  ],
+  "electric_potential": [
+    "voltage",
+    "V"
+  ],
+  "magnetic_field": [
+    "magnetic_field",
+    "T"
+  ],
+  "intensity": [
+    "intensity",
+    "W/m2"
+  ],
+  "kinetic_energy": [
+    "energy",
+    "J"
+  ],
+  "length": [
+    "length",
+    "m"
+  ],
+  "mass_defect": [
+    "mass",
+    "kg"
+  ],
+  "flux": [
+    "magnetic_flux",
+    "Wb"
+  ],
+  "entropy": [
+    "entropy",
+    "J/K"
+  ],
+  "speed_of_light": [
+    "speed",
+    "m/s"
+  ],
+  "gravitational_constant": [
+    "gravitational_constant",
+    "m3/(kg·s2)"
+  ],
+  "planck_constant": [
+    "action",
+    "J·s"
+  ],
+  "boltzmann_constant": [
+    "entropy",
+    "J/K"
+  ],
+  "elementary_charge": [
+    "charge",
+    "C"
+  ],
+  "gas_constant": [
+    "gas_constant",
+    "J/(mol·K)"
+  ],
+  "avogadro_constant": [
+    "quantity_per_mole",
+    "1/mol"
+  ],
+  "coulomb_constant": [
+    "coulomb_constant",
+    "N·m2/C2"
+  ],
+  "stefan_boltzmann_constant": [
+    "stefan_boltzmann_constant",
+    "W/(m2·K4)"
+  ]
+}
+SPECIAL_OUTPUT_META = {
+  "celsius_kelvin": [
+    "temperature",
+    "K"
+  ],
+  "celsius_fahrenheit": [
+    "temperature",
+    "degF"
+  ],
+  "fahrenheit_celsius": [
+    "temperature",
+    "degC"
+  ]
+}
 def _evaluate_formula(expression, values):
+    expression = expression.strip()
+    while expression.endswith(")") and expression.count("(") < expression.count(")"):
+        expression = expression[:-1]
     tree = ast.parse(expression, mode="eval")
 
     def visit(node):
@@ -2186,45 +2402,57 @@ def physics_calculate(args):
     if not isinstance(args, dict):
         raise ValueError("arguments must be an object.")
     if args.get("list_formulas"):
-        return {"success": True, "formula_count": len(FORMULAS), "formulas": [{k:v for k,v in f.items() if k != "expr"} for f in FORMULAS]}
+        formulas = []
+        for formula in FORMULAS:
+            metadata = SPECIAL_OUTPUT_META.get(formula["id"], OUTPUT_META.get(formula["target"], ["unknown", "SI"]))
+            input_units = {key: INPUT_UNITS.get(key, "dimensionless") for key in formula["inputs"]}
+            if "angle" in input_units:
+                input_units["angle"] = "rad" if formula["id"] == "angular_velocity" else "deg"
+            formulas.append({
+                **{key: value for key, value in formula.items() if key != "expr"},
+                "input_units": input_units,
+                "output_dimension": metadata[0],
+                "output_unit": metadata[1],
+            })
+        return {"success": True, "formula_count": len(FORMULAS), "formulas": formulas}
     formula_id = str(args.get("formula_id") or "").strip()
     target = str(args.get("target") or "").strip()
     values = args.get("values") or {}
-    units = args.get("units") or {}
-    if not isinstance(values, dict) or not isinstance(units, dict):
-        raise ValueError("values and units must be objects.")
-    constants = {k:v for k,v in {"gravity":9.80665,"speed_of_light":299792458,"gravitational_constant":6.6743e-11,"planck_constant":6.62607015e-34,"boltzmann_constant":1.380649e-23,"elementary_charge":1.602176634e-19,"gas_constant":8.314462618,"avogadro_constant":6.02214076e+23,"coulomb_constant":8987551792.3,"stefan_boltzmann_constant":5.670374419e-8}.items()}
+    if not isinstance(values, dict):
+        raise ValueError("values must be an object of numeric values already normalized to the formula's canonical input units.")
+    constants = {"gravity":9.80665,"speed_of_light":299792458,"gravitational_constant":6.6743e-11,"planck_constant":6.62607015e-34,"boltzmann_constant":1.380649e-23,"elementary_charge":1.602176634e-19,"gas_constant":8.314462618,"avogadro_constant":6.02214076e+23,"coulomb_constant":8987551792.3,"stefan_boltzmann_constant":5.670374419e-8}
     values = {**constants, **values}
     if formula_id:
-        selected = next((f for f in FORMULAS if f["id"] == formula_id), None)
+        selected = next((formula for formula in FORMULAS if formula["id"] == formula_id), None)
         if selected is None:
             raise ValueError("Unknown formula_id; call list_formulas=true to inspect the built-in catalog.")
     else:
-        matches = [f for f in FORMULAS if (not target or target.casefold() in (f["target"].casefold(), f["name"].casefold())) and not [k for k in f["inputs"] if k not in values]]
+        matches = [formula for formula in FORMULAS if (not target or target.casefold() in (formula["target"].casefold(), formula["name"].casefold())) and not [key for key in formula["inputs"] if key not in values]]
         if not matches:
             raise ValueError("No matching formula. Provide formula_id or target plus all required numerical inputs.")
         selected = matches[0]
-    missing = [k for k in selected["inputs"] if k not in values]
+    missing = [key for key in selected["inputs"] if key not in values]
     if missing:
         raise ValueError("Missing inputs: " + ", ".join(missing))
-    x = {}
-    for key in selected["inputs"]:
-        numeric = _finite_number(values[key], key)
-        unit = units.get(key)
-        if unit is not None:
-            factors = UNIT_FACTORS.get(key)
-            if factors is None:
-                x[key] = numeric
-            elif unit not in factors:
-                raise ValueError(f"Unsupported unit {unit} for {key}.")
-            else:
-                x[key] = numeric * factors[unit]
-        else:
-            x[key] = numeric
+    x = {key: _finite_number(values[key], key) for key in selected["inputs"]}
     try:
         result = _evaluate_formula(selected["expr"], x)
     except Exception as exc:
         raise ValueError(f"Formula computation failed: {exc}") from None
-    if isinstance(result,bool) or not isinstance(result,(int,float)) or not math.isfinite(float(result)):
-        raise ValueError("Non-finite result. Check units, denominator and physical conditions.")
-    return {"success":True,"formula_id":selected["id"],"domain":selected["domain"],"formula_name":selected["name"],"target":selected["target"],"equation":selected["equation"],"inputs_si":x,"result":float(result),"output_unit":OUTPUT_UNITS.get(selected["target"],"SI"),"assumptions":selected.get("assumptions",[]),"formula_count":len(FORMULAS)}
+    if isinstance(result, bool) or not isinstance(result, (int, float)) or not math.isfinite(float(result)):
+        raise ValueError("Non-finite result. Check denominator and physical conditions.")
+    metadata = SPECIAL_OUTPUT_META.get(selected["id"], OUTPUT_META.get(selected["target"], ["unknown", "SI"]))
+    return {
+        "success": True,
+        "formula_id": selected["id"],
+        "domain": selected["domain"],
+        "formula_name": selected["name"],
+        "target": selected["target"],
+        "equation": selected["equation"],
+        "inputs": x,
+        "result": float(result),
+        "to_unit": metadata[1],
+        "dimension": metadata[0],
+        "assumptions": selected.get("assumptions", []),
+        "formula_count": len(FORMULAS),
+    }
