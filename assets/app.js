@@ -209,8 +209,8 @@ window.LACChatComposerUI.init({$: $,generate,isGenerating:()=>!!controller});$('
 const selectedDocIds=new Set();let stagedDocIds=new Set(),pickerDocuments=[];
 const {getEnabledAgentTools,saveAgentTools}=window.LACChatAgentToolsUI;
 window.LACChatAgentToolsUI.bind();
-const updateToolMode=()=>{const el=$('#chatMode');if(el){const n=selectedDocIds.size;el.innerHTML='<span class="mode-label">Chat</span><span class="mode-rag '+(n?'is-on':'')+'"><i></i>RAG'+(n?' · '+n+' files':'')+'</span>';}$('#attachedFileCount').textContent=String(selectedDocIds.size);$('#attachedFileCount').hidden=!selectedDocIds.size;};
-window.LACChatFilePickerUI.init({$: $,esc,selectedDocIds,updateToolMode});
+const updateToolMode=()=>window.LACChatFilePickerUI.updateToolMode();
+window.LACChatFilePickerUI.init({$: $,esc,selectedDocIds});
 $('#newChat').onclick=createChat;$('#overlay').onclick=()=>$('#sidebar').classList.remove('open');$('#menu').onclick=()=>$('#sidebar').classList.add('open');$('#closeSide').onclick=()=>$('#sidebar').classList.remove('open');
 $('#theme').onclick=()=>{let d=document.documentElement;d.dataset.theme=d.dataset.theme==='dark'?'light':'dark';localStorage.setItem('theme',d.dataset.theme)};document.documentElement.dataset.theme=localStorage.getItem('theme')||'light';
 
