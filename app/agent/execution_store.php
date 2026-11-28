@@ -197,9 +197,18 @@ function lac_tool_execute_managed_locked(PDO $pdo,string $name,array $args,array
    $result['tool_call_id']=$toolCallId;$result['execution_id']=$base['execution_id'];
    $pack=lac_data_pack_put($runId,$name,$base['execution_id'],$result);$reference=$pack['data_ref'];$result['result_id']=$pack['result_id']??null;$result['result_reference']=$reference;
    if(function_exists('lac_agent_task_load')&&(lac_agent_task_load($runId)['state']??'')==='cancelled'){return ['ok'=>false,'tool'=>$name,'tool_call_id'=>$toolCallId,'error_code'=>'JOB_CANCELLED','error'=>'The current result is not committed to the invocation ledger because the Job was cancelled.','retryable'=>false];}
-   lac_execution_transition($runId,$toolCallId,'RESULT_RECEIVED',['result_status'=>'success','result_reference'=>$reference]);
-   lac_execution_result_store($runId,$toolCallId,$result);
-   lac_execution_transition($runId,$toolCallId,'COMMITTED');
+   // Cancellation and execution commit share a run-wide lock. This makes the
+   // cancellation-vs-commit decision linearizable: whichever acquires the lock
+   // first wins, and a cancelled task cannot commit a late tool result.
+   if(!function_exists('lac_agent_task_with_commit_lock'))require_once __DIR__.'/task_store.php';
+   $committed=lac_agent_task_with_commit_lock($runId,function()use($runId,$toolCallId,$reference,$result){
+    if((lac_agent_task_load($runId)['state']??'')==='cancelled')return false;
+    lac_execution_transition($runId,$toolCallId,'RESULT_RECEIVED',['result_status'=>'success','result_reference'=>$reference]);
+    lac_execution_result_store($runId,$toolCallId,$result);
+    lac_execution_transition($runId,$toolCallId,'COMMITTED');
+    return true;
+   });
+   if(!$committed)return ['ok'=>false,'tool'=>$name,'tool_call_id'=>$toolCallId,'error_code'=>'JOB_CANCELLED','error'=>'The task was cancelled before the execution result could be committed.','retryable'=>false];
    return $result;
   }
  } catch(Throwable $e) {
