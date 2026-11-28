@@ -9,10 +9,11 @@ window.LACChatGenerationUI.init({$: $,getAlias:()=>currentModelAlias,getSelected
 const {formatHMS,traceDuration,traceStamp,traceLabel,traceSourceLabel,traceLineText}=window.LACChatTraceUtils;
 window.LACChatTraceUI.init(()=>current);
 const {ensureMessageTrace,renderMessageTrace,showTraceEventDetail,startMessageTrace,toggleMessageTrace}=window.LACChatTraceUI;
-window.LACChatMessageUI.init({$: $,md,typeset:typesetMath,formatHMS,toggleTrace:toggleMessageTrace,ensureTrace:ensureMessageTrace,attachmentRender:(node,items)=>window.LACAttachmentUI.renderMessage(node,items),notify:toast,generate,isGenerating:()=>!!controller,setLastAssistant:value=>{lastAssistant=value},hidePreviousContinue:hidePreviousContinueActions,syncActions:syncAssistantActions});
 const addMessage=(role,text,opts={})=>window.LACChatMessageUI.addMessage(role,text,opts);
 const generationUI=window.LACChatGenerationUI;
-const syncAssistantActions=(generating=false)=>generationUI.syncAssistantActions(generating);const hidePreviousContinueActions=()=>generationUI.hidePreviousContinueActions();async function loadHistory(){return window.LACChatHistoryUI.loadHistory();}
+const syncAssistantActions=(generating=false)=>generationUI.syncAssistantActions(generating);const hidePreviousContinueActions=()=>generationUI.hidePreviousContinueActions();
+window.LACChatMessageUI.init({$: $,md,typeset:typesetMath,formatHMS,toggleTrace:toggleMessageTrace,ensureTrace:ensureMessageTrace,attachmentRender:(node,items)=>window.LACAttachmentUI.renderMessage(node,items),notify:toast,generate,isGenerating:()=>!!controller,setLastAssistant:value=>{lastAssistant=value},hidePreviousContinue:hidePreviousContinueActions,syncActions:syncAssistantActions});
+async function loadHistory(){return window.LACChatHistoryUI.loadHistory();}
 let recoveryTimer=null,recoveryBusy=false,recoveredGeneration=false,recoveredElapsedBase=0,recoveredElapsedAt=0,recoveredStream=null,recoveredStreamMessageId=0;
 window.LACChatGenerationRecovery.init({$: $,getCurrent:()=>current,md,typeset:typesetMath,refresh:refreshGenerationSnapshot});
 window.LACChatConversationUI.init({$: $,getCurrent:()=>current,setCurrent:id=>{current=id},isGenerating:()=>!!controller,getLastAssistant:()=>lastAssistant,setLastAssistant:value=>{lastAssistant=value},post,stopRecovery,updateToolMode,addMessage,syncAssistantActions,loadHistory,refreshGenerationSnapshot,startRecovery,toast});
