@@ -105,10 +105,11 @@ if($action==='agent_task_approve'){
  if(($pending['kind']??'')==='tool_call'){
   $tool=(string)($pending['tool']??'');$args=is_array($pending['arguments']??null)?$pending['arguments']:[];
   if(!in_array($tool,$valid,true))out(['error'=>'Tool is no longer enabled.'],403);
-  // Claim approval atomically before executing to prevent duplicate side effects from concurrent clicks/retries.
-  try{lac_agent_task_save($runId,'executing',['pending_approval'=>$pending],'waiting_approval');}catch(Throwable $e){out(['error'=>'Approval is no longer pending; another request may have handled it.'],409);}
   $toolCallId=(string)($pending['tool_call_id']??'');
   if($toolCallId===''||strlen($toolCallId)>128)out(['error'=>'Approval is missing a valid tool_call_id; refusing execution to prevent duplicate side effects.'],409);
+  // Validate identity before claiming. Invalid legacy approvals must not strand the task in executing.
+  // Claim approval atomically before executing to prevent duplicate side effects from concurrent clicks/retries.
+  try{lac_agent_task_save($runId,'executing',['pending_approval'=>$pending],'waiting_approval');}catch(Throwable $e){out(['error'=>'Approval is no longer pending; another request may have handled it.'],409);}
   $result=lac_tool_execute_managed($pdo,$tool,$args,$valid,['sandbox'=>false,'run_id'=>$runId,'python'=>getenv('LOCAL_AI_PYTHON')?:(PHP_OS_FAMILY==='Windows'?'python':'python3')],$toolCallId);
   lac_agent_task_save($runId,!empty($result['ok'])?'completed':'failed',['approved'=>true,'approved_pending'=>$pending,'result'=>$result],'executing');
   out(['ok'=>!empty($result['ok']),'state'=>!empty($result['ok'])?'completed':'failed','result'=>$result],empty($result['ok'])?500:200);
