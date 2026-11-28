@@ -1,0 +1,56 @@
+name: Rewrite Git History
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: "Message for the new single root commit"
+        required: true
+        type: string
+        default: "Initial commit (clean history)"
+
+permissions:
+  contents: write
+
+jobs:
+  rewrite-history:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current main snapshot
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preserve current snapshot, create orphan commit, and force-push
+        shell: bash
+        env:
+          COMMIT_MESSAGE: ${{ inputs.commit_message }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          SNAPSHOT_DIR="$(mktemp -d)"
+          git archive origin/main | tar -x -C "$SNAPSHOT_DIR"
+
+          git switch --orphan clean-history
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$SNAPSHOT_DIR"/. .
+          rm -rf "$SNAPSHOT_DIR"
+
+          git add -A
+          git commit -m "$COMMIT_MESSAGE"
+
+          NEW_SHA="$(git rev-parse HEAD)"
+          echo "New root commit: $NEW_SHA"
+          git push --force origin HEAD:main
+
+      - name: Verify main now has one commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          COUNT="$(git rev-list --count origin/main)"
+          echo "Commit count on main: $COUNT"
+          test "$COUNT" -eq 1

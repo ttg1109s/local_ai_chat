@@ -1,0 +1,1 @@
+(()=>{'use strict';const modules=window.RAGModules;modules.upload.init();modules.documents.init();})();

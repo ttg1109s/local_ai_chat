@@ -1,0 +1,233 @@
+/* Numbered web citations and their source list */
+.message-content .citation-marker{font-size:.76em;vertical-align:super;line-height:0;margin:0 .08em;white-space:nowrap}
+.message-content .citation-marker a{display:inline-block;text-decoration:none;border:1px solid var(--line);border-radius:5px;padding:1px 4px;background:var(--panel);font-weight:650}
+.message-content .citation-marker a:hover{background:var(--hover, var(--panel));text-decoration:underline}
+.message-content .citation-sources{margin:1.1em 0 .35em;padding:.8em 1em;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.message-content .citation-sources h4{margin:0 0 .55em;font-size:.94em;font-weight:700}
+.message-content .citation-sources ol{margin:0;padding-left:1.5em}
+.message-content .citation-sources li{padding:.2em 0 .35em .2em;overflow-wrap:anywhere}
+.message-content .citation-sources li>a{font-weight:600;text-decoration:none}
+.message-content .citation-sources li>span{display:block;color:var(--muted);font-size:.82em;overflow-wrap:anywhere}
+
+
+/* Conversation history refresh: date sections, quiet status icons and compact menus */
+.history{
+ overflow:auto;flex:1;min-height:50px;padding:5px 7px 14px;
+ scroll-behavior:smooth;overscroll-behavior:contain;
+ scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 42%,transparent) transparent;
+}
+.history::-webkit-scrollbar,.messages::-webkit-scrollbar{width:7px}
+.history::-webkit-scrollbar-track,.messages::-webkit-scrollbar-track{background:transparent}
+.history::-webkit-scrollbar-thumb,.messages::-webkit-scrollbar-thumb{
+ background:color-mix(in srgb,var(--muted) 34%,transparent);border:2px solid transparent;
+ background-clip:padding-box;border-radius:99px;min-height:34px;
+}
+.history::-webkit-scrollbar-thumb:hover,.messages::-webkit-scrollbar-thumb:hover{
+ background:color-mix(in srgb,var(--muted) 58%,transparent);background-clip:padding-box;
+}
+.history-group{padding:0 0 8px}
+.history-group-title{
+ position:sticky;top:0;z-index:2;padding:12px 9px 6px;
+ color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.075em;
+ text-transform:uppercase;background:var(--panel);opacity:.96;
+}
+.history-row{position:relative;display:flex;align-items:center;gap:2px;margin:2px 0;border-radius:9px;min-height:37px}
+.history-row:hover,.history-row.active{background:var(--panel2)}
+.history-item{
+ display:flex;align-items:center;gap:9px;min-width:0;flex:1;height:36px;
+ overflow:hidden;border:0;background:transparent;text-align:left;padding:0 9px;
+ color:var(--text);font-size:12px;cursor:pointer;
+}
+.history-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.lock-mini{font-size:14px!important;flex:none;color:var(--muted);opacity:.72}
+.lock-mini.is-locked{color:var(--text);opacity:1}
+.history-more{
+ width:30px;height:30px;flex:none;margin-right:3px;display:grid;place-items:center;
+ border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer;
+ opacity:0;transition:opacity .15s,background .15s,color .15s;
+}
+.history-row:hover .history-more,.history-row.active .history-more,.history-more:focus-visible{opacity:1}
+.history-more:hover{background:var(--bg);color:var(--text)}
+.history-more .material-icons-round{font-size:19px}
+.history-context-menu{
+ position:absolute;z-index:20;right:5px;top:calc(100% - 1px);width:205px;
+ padding:5px;background:var(--panel);border:1px solid var(--line);
+ border-radius:11px;box-shadow:0 12px 34px #0002;
+}
+.history-context-menu[hidden]{display:none!important}
+.history-context-action{
+ display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;
+ border:0;border-radius:7px;background:transparent;color:var(--text);
+ text-align:left;font-size:12px;cursor:pointer;
+}
+.history-context-action:hover{background:var(--panel2)}
+.history-context-action .material-icons-round{font-size:17px;color:var(--muted)}
+.history-context-action.danger,.history-context-action.danger .material-icons-round{color:var(--danger)}
+@media(hover:none){
+ .history-more{opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+ .history,.messages{scroll-behavior:auto!important}
+ .history-more{transition:none}
+}
+
+
+/* Assistant layout: readable answer column, full-width trace within the conversation pane. */
+.message.assistant{width:100%;max-width:none;margin-left:0;margin-right:0}
+.message.assistant .message-content{width:min(820px,calc(100% - 32px));max-width:820px;margin-inline:auto;box-sizing:border-box}
+.message.assistant .model-status,.message.assistant .message-tools{width:min(820px,calc(100% - 32px));max-width:820px;margin-left:auto;margin-right:auto;box-sizing:border-box}
+.message-trace{display:block;width:100%;max-width:none;margin:10px 0 8px;padding:0;box-sizing:border-box;color:var(--text)}
+.message-trace[hidden]{display:none!important}
+.message-trace-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:24px;margin:0 0 4px;font-size:11px;color:var(--muted)}
+.message-trace-live{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.message-trace.is-live .message-trace-live{color:var(--accent)}
+.message-trace-toggle{border:0;padding:2px 0;background:transparent;color:var(--accent);font:500 11px/1.4 inherit;cursor:pointer}
+.message-trace-toggle:hover{text-decoration:underline}
+.message-trace-toggle[hidden]{display:none!important}
+.message-trace-events{display:flex;flex-direction:column;gap:0;max-height:none;overflow:visible;padding:0}
+.message-trace-line{display:flex;align-items:baseline;gap:9px;min-height:25px;padding:3px 2px;color:var(--text);font-size:12px;line-height:1.45;cursor:pointer;border-radius:4px}
+.message-trace-line:hover,.message-trace-line:focus-visible{background:color-mix(in srgb,var(--text) 5%,transparent);outline:none}
+.message-trace-line .trace-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#858b96;align-self:center}
+.message-trace-line.source-model .trace-dot{background:#3984d6}
+.message-trace-line.source-agent .trace-dot{background:#8b6bd6}
+.message-trace-line.source-tool .trace-dot{background:#159b91}
+.message-trace-line.level-warn .trace-dot,.message-trace-line.level-warning .trace-dot{background:#d69b32}
+.message-trace-line.level-error .trace-dot{background:#d9534f}
+.message-trace-line .trace-label{font-weight:600;color:var(--text);overflow-wrap:anywhere}
+.message-trace-line .trace-meta{margin-left:auto;color:var(--muted);font:10px/1.4 ui-monospace,Consolas,monospace;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.message-trace-selected{margin:6px 0 10px 16px;padding:0;border:0;background:transparent;color:var(--text);font:11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:360px;overflow:auto}
+@media(max-width:700px){
+ .message.assistant .message-content,.message.assistant .model-status,.message.assistant .message-tools{width:calc(100% - 24px)}
+ .message-trace-line{align-items:flex-start;flex-wrap:wrap}
+ .message-trace-line .trace-meta{width:calc(100% - 18px);margin-left:16px;text-align:left;white-space:normal}
+}
+
+
+/* Execution trace: one-line live tail, full-width within the conversation column. */
+.message.assistant .message-trace{
+  display:block;
+  width:100%;
+  max-width:none;
+  margin:10px 0 8px;
+  padding:0;
+  box-sizing:border-box;
+}
+.message-trace-events{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  width:100%;
+  max-height:none;
+  overflow:visible;
+  padding:0;
+}
+.message-trace-line{
+  display:block;
+  width:100%;
+  min-width:0;
+  min-height:0;
+  box-sizing:border-box;
+  padding:3px 0;
+  margin:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--text);
+  font:12px/1.45 ui-monospace,Consolas,"Courier New",monospace;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  overflow-wrap:normal;
+  word-break:normal;
+  cursor:pointer;
+}
+.message-trace-line:hover,
+.message-trace-line:focus-visible{
+  background:color-mix(in srgb,var(--text) 5%,transparent);
+  outline:none;
+}
+.message-trace-line.level-error{color:#c53f3f}
+.message-trace-line.level-warn,
+.message-trace-line.level-warning{color:#a66a0a}
+.message-trace-toolbar{
+  min-height:20px;
+  margin:0 0 3px;
+  font-size:11px;
+}
+.message-trace-selected{
+  max-width:100%;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+
+
+/* FINAL ALIGNMENT FIX: trace uses the exact same centered content column as the assistant answer.
+   This intentionally overrides legacy full-conversation-width trace rules above. */
+.message.assistant .message-trace,
+.message.assistant .message-content {
+  width: min(820px, calc(100% - 32px)) !important;
+  max-width: 820px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+  align-self: center !important;
+}
+.message.assistant .message-trace {
+  margin-top: 10px !important;
+  margin-bottom: 8px !important;
+}
+
+
+/* Trace UX: no per-event JSON popover and no expand/collapse toolbar.
+   Full log is a three-row independently scrollable viewport. */
+.message-trace-toolbar,
+.message-trace-toggle,
+.message-trace-selected { display:none !important; }
+.message-trace-events { max-height:none; overflow:hidden; }
+.message-trace.show-all .message-trace-events {
+  height:78px !important;
+  min-height:78px !important;
+  max-height:78px !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+.message-trace-line {
+  height:26px !important;
+  min-height:26px !important;
+  max-height:26px !important;
+  flex:0 0 26px !important;
+  display:block !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  cursor:default !important;
+}
+
+
+/* Enforce exactly three visible trace rows in expanded mode. */
+.message-trace.show-all .message-trace-events {
+  display: block !important;
+  height: 78px !important;
+  min-height: 78px !important;
+  max-height: 78px !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+}
+.message-trace.show-all .message-trace-line {
+  display: block !important;
+  box-sizing: border-box !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  margin: 0 !important;
+  padding: 4px 2px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+
+

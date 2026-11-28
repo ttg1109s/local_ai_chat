@@ -1,0 +1,352 @@
+/* Chat composer tool controls */
+
+/* Composer toolbar: compact icon-only controls aligned with model and send actions. */
+.composer-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:8px;min-height:46px;flex-wrap:nowrap}
+.composer-tools{display:flex;align-items:center;gap:7px;flex:0 0 auto;padding:0;min-width:0}
+.composer-tools .tool-chip>span:not(.material-icons-round):not(.tool-count){display:none}
+.composer-tools .tool-count{position:absolute;right:-5px;top:-5px;min-width:16px;height:16px;padding:0 3px;border-radius:10px;background:var(--accent);color:#fff;font-size:10px;line-height:16px;text-align:center}
+.composer-tools .tool-expand-icon{position:absolute;right:-5px;bottom:-5px;width:13px!important;height:13px!important;font-size:13px!important;border-radius:50%;background:var(--panel);border:1px solid var(--line)}
+.chat-model-picker{min-width:0;flex:1 1 auto;margin-left:4px}
+.composer-actions{flex:0 0 auto}
+
+
+/* Composer alignment refinement: model on the left, icon tools centered, send on the right. */
+.composer-bottom{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  column-gap:16px;
+  min-height:46px;
+}
+.composer-bottom .chat-model-picker{
+  grid-column:1;
+  grid-row:1;
+  justify-self:start;
+  min-width:0;
+  width:100%;
+  margin:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.composer-bottom .chat-model-picker select{
+  min-width:0;
+  max-width:100%;
+}
+.composer-bottom .composer-tools{
+  grid-column:2;
+  grid-row:1;
+  justify-self:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  height:40px;
+}
+.composer-bottom .composer-tools .tool-chip,
+  box-sizing:border-box;
+  width:38px;
+  height:38px;
+  min-width:38px;
+  min-height:38px;
+  flex:0 0 38px;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:0 !important;
+  outline:0;
+  border-radius:8px;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.composer-bottom .composer-tools .tool-chip:hover,
+  background:var(--panel2) !important;
+  color:var(--text);
+}
+.composer-bottom .composer-actions{
+  grid-column:3;
+  grid-row:1;
+  justify-self:end;
+  align-self:center;
+}
+@media(max-width:700px){
+  .composer-bottom{
+    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+    column-gap:8px;
+  }
+  .composer-bottom .composer-tools{gap:5px}
+  .composer-bottom .composer-tools .tool-chip,
+    width:36px;height:36px;min-width:36px;min-height:36px;flex-basis:36px;
+  }
+}
+
+
+/* V3: consistent icon-button containers for Documents and Tools. */
+.composer-bottom{
+  min-height:48px !important;
+  align-items:center !important;
+}
+.composer-bottom .composer-tools{
+  height:44px !important;
+  min-height:44px !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:10px !important;
+  padding:0 !important;
+  margin:0 !important;
+  overflow:visible !important;
+}
+.composer-bottom .composer-tools > .tool-chip{
+  position:relative !important;
+  box-sizing:border-box !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 40px !important;
+  width:40px !important;
+  min-width:40px !important;
+  max-width:40px !important;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:1px solid var(--line) !important;
+  border-radius:10px !important;
+  background:var(--bg) !important;
+  color:var(--muted) !important;
+  box-shadow:none !important;
+  outline:none !important;
+  line-height:1 !important;
+  vertical-align:middle !important;
+}
+.composer-bottom .composer-tools > .tool-chip:hover{
+  border-color:var(--accent) !important;
+  background:var(--panel2) !important;
+  color:var(--text) !important;
+}
+  border-color:var(--accent) !important;
+  color:var(--accent) !important;
+}
+.composer-bottom .composer-tools > .tool-chip > .material-icons-round{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:20px !important;
+  height:20px !important;
+  min-width:20px !important;
+  font-size:20px !important;
+  line-height:20px !important;
+  margin:0 !important;
+}
+.composer-bottom .composer-tools > .tool-chip .tool-count{
+  position:absolute !important;
+  top:-6px !important;
+  right:-6px !important;
+  min-width:16px !important;
+  height:16px !important;
+  padding:0 3px !important;
+  border-radius:9px !important;
+  line-height:16px !important;
+  z-index:2 !important;
+}
+.composer-bottom .composer-tools > .tool-chip .tool-expand-icon{
+  position:absolute !important;
+  right:-5px !important;
+  bottom:-5px !important;
+  width:14px !important;
+  height:14px !important;
+  min-width:14px !important;
+  font-size:13px !important;
+  line-height:13px !important;
+  border-radius:50% !important;
+  background:var(--panel) !important;
+  border:1px solid var(--line) !important;
+}
+@media(max-width:700px){
+  .composer-bottom .composer-tools{gap:7px !important}
+  .composer-bottom .composer-tools > .tool-chip{
+    flex-basis:40px !important;
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    min-height:40px !important;
+  }
+}
+
+
+/* V4: unify the model selector, icon group and send button as three equal-height controls. */
+.composer-bottom{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto auto !important;
+  align-items:center !important;
+  min-height:48px !important;
+  column-gap:12px !important;
+}
+.composer-bottom .chat-model-picker{
+  box-sizing:border-box !important;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  min-width:0 !important;
+  padding:0 10px !important;
+  margin:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:7px !important;
+  border:1px solid var(--line) !important;
+  border-radius:10px !important;
+  background:var(--bg) !important;
+}
+.composer-bottom .chat-model-picker > .material-icons-round{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:20px !important;
+  height:20px !important;
+  flex:0 0 20px !important;
+  font-size:20px !important;
+  line-height:20px !important;
+}
+.composer-bottom .chat-model-picker select{
+  box-sizing:border-box !important;
+  height:36px !important;
+  min-height:36px !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  padding:0 22px 0 0 !important;
+  margin:0 !important;
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  background:transparent !important;
+  line-height:20px !important;
+}
+.composer-bottom .composer-tools{
+  box-sizing:border-box !important;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  align-self:center !important;
+  padding:0 !important;
+  margin:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+.composer-bottom .composer-actions{
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:center !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+.composer-bottom .composer-actions > button,
+.composer-bottom .composer-actions > .send-btn,
+.composer-bottom .composer-actions button[type="submit"]{
+  box-sizing:border-box !important;
+  width:40px !important;
+  min-width:40px !important;
+  max-width:40px !important;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  padding:0 !important;
+  margin:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border:1px solid var(--line) !important;
+  border-radius:10px !important;
+  line-height:1 !important;
+}
+@media(max-width:700px){
+  .composer-bottom{column-gap:7px !important}
+  .composer-bottom .chat-model-picker{padding:0 7px !important}
+}
+
+
+/* V5: compact model selector, centered tool group, right-aligned send button. */
+.composer-bottom{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:0 !important;
+  min-height:44px !important;
+  padding-top:10px !important;
+}
+.composer-bottom .chat-model-picker{
+  flex:0 1 auto !important;
+  width:max-content !important;
+  max-width:calc(50% - 90px) !important;
+  min-width:0 !important;
+  justify-self:auto !important;
+  margin:0 !important;
+  padding:0 10px !important;
+  gap:7px !important;
+}
+.composer-bottom .chat-model-picker select{
+  width:auto !important;
+  max-width:calc(100% - 27px) !important;
+  min-width:0 !important;
+  flex:0 1 auto !important;
+  font-size:13px !important;
+  text-overflow:ellipsis !important;
+}
+.composer-bottom .chat-model-picker > .material-icons-round{
+  width:18px !important;
+  height:18px !important;
+  flex:0 0 18px !important;
+  font-size:18px !important;
+  line-height:18px !important;
+}
+.composer-bottom .composer-tools{
+  position:absolute !important;
+  left:50% !important;
+  top:10px !important;
+  transform:translateX(-50%) !important;
+  grid-column:auto !important;
+  grid-row:auto !important;
+  justify-self:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+.composer-bottom .composer-actions{
+  position:static !important;
+  grid-column:auto !important;
+  grid-row:auto !important;
+  margin:0 0 0 auto !important;
+  padding:0 !important;
+  flex:0 0 40px !important;
+}
+.composer{
+  padding:14px 13px 11px !important;
+}
+.composer textarea{
+  box-sizing:border-box !important;
+  padding:7px 0 9px !important;
+  min-height:42px !important;
+  line-height:1.6 !important;
+}
+@media(max-width:700px){
+  .composer-bottom{gap:0 !important}
+  .composer-bottom .chat-model-picker{
+    max-width:calc(50% - 78px) !important;
+    padding:0 7px !important;
+  }
+  .composer-bottom .composer-tools{
+    gap:5px !important;
+    top:10px !important;
+  }
+  .composer{padding:14px 12px 11px !important}
+  .composer textarea{padding:8px 0 10px !important;min-height:44px !important}
+}
+

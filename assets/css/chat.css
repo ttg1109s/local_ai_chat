@@ -1,0 +1,8 @@
+/* Chat stylesheet entry point. Group vendor styles and app styles by responsibility.
+ * Preserve original app stylesheet order to avoid changing the cascade.
+ */
+@import url("../vendor/prism/prism-tomorrow.min.css");
+@import url("../vendor/prism/prism-line-numbers.min.css");
+@import url("../app.css");
+@import url("../app-ui.css");
+@import url("../app-features.css");
