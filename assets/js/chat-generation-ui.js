@@ -1,0 +1,9 @@
+(()=>{'use strict';
+let $,getAlias=()=>'',getSelectedModel=()=> 'Model';
+function init(deps={}){$=deps.$;getAlias=deps.getAlias||getAlias;getSelectedModel=deps.getSelectedModel||getSelectedModel;}
+function syncAssistantActions(generating=false){const messages=[...$('#messages').querySelectorAll('.message.assistant')];messages.forEach((msg,index)=>{const regen=msg.querySelector('[data-act="regenerate"]');if(regen)regen.hidden=generating||msg.classList.contains('is-generating')||index!==messages.length-1;});}
+function hidePreviousContinueActions(){$('#messages').querySelectorAll('.message.assistant [data-act="continue"]').forEach(button=>{button.hidden=true;button.disabled=true;});}
+function setGenerating(on){$('#send').hidden=on;$('#stop').hidden=!on;$('#send').disabled=on;$('#stop').disabled=false;$('#stop .material-icons-round').textContent='stop';syncAssistantActions(!!on);}
+function setAssistantGenerationState(body,label,state,preparing=false){if(!body)return;const msg=body.closest('.message');const safeLabel=(String(label||msg?.dataset.modelAlias||getAlias()||getSelectedModel()||'Model').trim()||'Model');if(msg)msg.dataset.modelAlias=safeLabel;const node=msg?.querySelector('.model-state');if(node)node.textContent=safeLabel+' · '+state;const hint=msg?.querySelector('.generation-hint');if(hint){hint.hidden=true;hint.textContent='';}if(state==='typing'||state==='preparing')msg?.classList.add('is-generating');else msg?.classList.remove('is-generating');}
+window.LACChatGenerationUI={init,syncAssistantActions,hidePreviousContinueActions,setGenerating,setAssistantGenerationState};
+})();
