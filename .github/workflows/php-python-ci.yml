@@ -1,0 +1,49 @@
+name: Python CI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-tests:
+    name: Python 3.12 tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-agent-engines.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-agent-engines.txt
+
+      - name: Python syntax check
+        run: |
+          python -m compileall -q tools tests
+
+      - name: Run Python regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r -d '' test_file; do
+            echo "========================================"
+            echo "Running $test_file"
+            python "$test_file"
+            count=$((count + 1))
+          done < <(find tests -type f -name '*_test.py' -print0 | sort -z)
+
+          if [ "$count" -eq 0 ]; then
+            echo "::error::No Python test files were found."
+            exit 1
+          fi
+          echo "All $count Python test files passed."

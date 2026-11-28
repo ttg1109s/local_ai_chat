@@ -1,0 +1,45 @@
+{
+    "schema_version": 2,
+    "data_pack_id": "eec74ce417644bbc218",
+    "data_ref": "agent-results/eec74ce417644bbc218.json",
+    "run_id": "runtime_state_9c2a6a2637d8",
+    "execution_id": "exec_74ce417644bbc218",
+    "result_id": "res_42cfd00f581496d6c10f18c2",
+    "tool": "python_generate_data",
+    "created_at": "2026-11-10T18:09:52+00:00",
+    "format": "json+jsonl-segments",
+    "fields": {
+        "ok": {
+            "type": "bool",
+            "count": null
+        },
+        "tool": {
+            "type": "string",
+            "count": null
+        },
+        "datasets": {
+            "type": "array",
+            "count": 1,
+            "segments": [
+                {
+                    "file": "eec74ce417644bbc218.datasets_714284ab.000000.jsonl",
+                    "rows": 1,
+                    "bytes": 19,
+                    "sha256": "6ee6cfdc9555f69dd19bcd35373e6742dac54cc1aeee6037f800e2b93b6ba9d7",
+                    "format": "jsonl",
+                    "committed": true
+                }
+            ],
+            "segmented": true
+        },
+        "result_id": {
+            "type": "string",
+            "count": null
+        }
+    },
+    "integrity": "fcb0426d712971cd7d7b2c798eecfb34d661a2fe5bffb127c1556ceab3004fc5",
+    "lifecycle": "committed",
+    "policy": {
+        "access": "run-scoped"
+    }
+}

@@ -1,0 +1,40 @@
+{
+    "schema_version": 2,
+    "data_pack_id": "5b175a41029a04609ccf1aff78a35d6a537ab7d3db2252bd9c0e8b067c4e4294",
+    "data_ref": "agent-results/5b175a41029a04609ccf1aff78a35d6a537ab7d3db2252bd9c0e8b067c4e4294.json",
+    "run_id": "test-run-884b3fcc",
+    "execution_id": "5b175a41029a04609ccf1aff78a35d6a537ab7d3db2252bd9c0e8b067c4e4294",
+    "tool": "test",
+    "created_at": "2026-11-10T14:08:11+00:00",
+    "format": "json+jsonl-segments",
+    "fields": {
+        "rows": {
+            "type": "array",
+            "count": 1205,
+            "segments": [
+                {
+                    "file": "5b175a41029a04609ccf1aff78a35d6a537ab7d3db2252bd9c0e8b067c4e4294.rows_bc51e9e6.000000.jsonl",
+                    "rows": 1000,
+                    "bytes": 25890,
+                    "sha256": "18f8ea0138999552ec76c0c7e784aeefacc2077a5dce1da5820ad0019998c9f1",
+                    "format": "jsonl",
+                    "committed": true
+                },
+                {
+                    "file": "5b175a41029a04609ccf1aff78a35d6a537ab7d3db2252bd9c0e8b067c4e4294.rows_bc51e9e6.000001.jsonl",
+                    "rows": 205,
+                    "bytes": 5537,
+                    "sha256": "ec6dc70bd47d7381c796d198682ee9e7f614be38c4524fb0466cabf05d798ed1",
+                    "format": "jsonl",
+                    "committed": true
+                }
+            ],
+            "segmented": true
+        }
+    },
+    "integrity": "fixture",
+    "lifecycle": "committed",
+    "policy": {
+        "access": "run-scoped"
+    }
+}

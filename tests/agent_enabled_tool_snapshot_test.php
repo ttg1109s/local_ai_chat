@@ -1,0 +1,24 @@
+<?php
+require_once __DIR__.'/../app/agent/tool_registry.php';
+require_once __DIR__.'/../app/agent/loop/protocol.php';
+require_once __DIR__.'/../app/agent/loop/recovery.php';
+require_once __DIR__.'/../app/agent/protocol_compiler.php';
+$catalog=lac_tool_catalog();
+$enabled=['python_calculate','search_web'];
+$snapshot=lac_agent_loop_enabled_tool_map($enabled,$catalog);
+if(array_keys($snapshot)!==$enabled)throw new RuntimeException('Agent must expose exactly the user-enabled tool snapshot.');
+$compiled=lac_agent_compile_protocol(array_values($snapshot));
+if(str_contains($compiled['system_text'],'toolbox_request'))throw new RuntimeException('Model must not be asked to select the toolbox again.');
+foreach($enabled as $tool)if(!str_contains($compiled['system_text'],$tool))throw new RuntimeException('An enabled tool is missing from the first-round catalog: '.$tool);
+if(str_contains($compiled['system_text'],'python_plot'))throw new RuntimeException('A disabled tool leaked into the model catalog.');
+$failure=['tool'=>'search_web','error_code'=>'UPSTREAM_TIMEOUT','phenomenon'=>'The upstream service timed out.','retryable'=>false];
+$message=lac_agent_loop_tool_failure_payload($failure,[],0,0);
+if($message['status']!=='tool_unavailable'||$message['error']['retryable']!==false)throw new RuntimeException('Non-retryable executor failures must remain non-retryable.');
+if(!str_contains($message['instruction'],'non-terminal'))throw new RuntimeException('Tool failure must not force model completion.');
+$retry=$failure;$retry['retryable']=true;
+$retryMessage=lac_agent_loop_tool_failure_payload($retry,[],1,0);
+if($retryMessage['status']!=='execution_failed'||$retryMessage['error']['retryable']!==true)throw new RuntimeException('Retryable executor failures must preserve retryability.');
+$runner=file_get_contents(__DIR__.'/../app/agent/loop/runner.php');
+if(!str_contains($runner,'$available=$allAvailable'))throw new RuntimeException('Enabled tools must be available before the first model request.');
+if(!str_contains($runner,"'recovery'=>'model_continuation'"))throw new RuntimeException('Agent protocol/tool errors must return control to model reasoning.');
+echo "PASS: immediate user-enabled tool catalog and non-terminal tool failure recovery\n";

@@ -1,0 +1,40 @@
+{
+    "schema_version": 2,
+    "data_pack_id": "c2e8035ffc985f5700627371",
+    "data_ref": "agent-results/c2e8035ffc985f5700627371.json",
+    "run_id": "test_run_bd39fd07",
+    "execution_id": "c2e8035ffc985f5700627371",
+    "tool": "manage_websites",
+    "created_at": "2026-11-10T14:06:25+00:00",
+    "format": "json+jsonl-segments",
+    "fields": {
+        "action": {
+            "type": "string",
+            "count": null
+        },
+        "count": {
+            "type": "int",
+            "count": null
+        },
+        "websites": {
+            "type": "array",
+            "count": 2,
+            "segments": [
+                {
+                    "file": "c2e8035ffc985f5700627371.websites_cc586e0f.000000.jsonl",
+                    "rows": 2,
+                    "bytes": 130,
+                    "sha256": "5f174fe6b4e6e93daa5a6379fb08b97e35666ef103bb80105861eaf16e555f0d",
+                    "format": "jsonl",
+                    "committed": true
+                }
+            ],
+            "segmented": true
+        }
+    },
+    "integrity": "40b81d6c5735eb0f871884060d5b1cb4b6ec7d534a4401b6c0a6cd553699176f",
+    "lifecycle": "committed",
+    "policy": {
+        "access": "run-scoped"
+    }
+}

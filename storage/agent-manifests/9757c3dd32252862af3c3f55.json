@@ -1,0 +1,45 @@
+{
+    "schema_version": 2,
+    "data_pack_id": "9757c3dd32252862af3c3f55",
+    "data_ref": "agent-results/9757c3dd32252862af3c3f55.json",
+    "run_id": "test_run_f8ebe849",
+    "execution_id": "9757c3dd32252862af3c3f55",
+    "result_id": "res_dff0922fdc8b09a6580d03c9",
+    "tool": "manage_websites",
+    "created_at": "2026-11-10T18:09:52+00:00",
+    "format": "json+jsonl-segments",
+    "fields": {
+        "action": {
+            "type": "string",
+            "count": null
+        },
+        "count": {
+            "type": "int",
+            "count": null
+        },
+        "websites": {
+            "type": "array",
+            "count": 2,
+            "segments": [
+                {
+                    "file": "9757c3dd32252862af3c3f55.websites_cc586e0f.000000.jsonl",
+                    "rows": 2,
+                    "bytes": 130,
+                    "sha256": "5f174fe6b4e6e93daa5a6379fb08b97e35666ef103bb80105861eaf16e555f0d",
+                    "format": "jsonl",
+                    "committed": true
+                }
+            ],
+            "segmented": true
+        },
+        "result_id": {
+            "type": "string",
+            "count": null
+        }
+    },
+    "integrity": "2ec91d48f1108b0d792243f643a597452af73261ac2cd762a49d43db84b0f302",
+    "lifecycle": "committed",
+    "policy": {
+        "access": "run-scoped"
+    }
+}
