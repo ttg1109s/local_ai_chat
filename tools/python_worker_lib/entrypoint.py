@@ -27,7 +27,10 @@ def main():
         args = payload.get("arguments", {})
         if not isinstance(args, dict): raise ValueError("arguments must be a JSON object.")
         output_dir = Path(payload.get("output_dir") or ".").resolve()
-        if action == "calculate": result = calculate(args)
+        if action == "text_diff":
+            from .text_diff import text_diff_tool
+            result = text_diff_tool(args)
+        elif action == "calculate": result = calculate(args)
         elif action == "unit_converter": result = dispatch_unit_converter(args)
         elif action == "physics_calculate": result = physics_calculate(args)
         elif action == "generate_number": result = generate_number_tool(args)
