@@ -161,7 +161,9 @@ function lac_data_pack_resolve_value(mixed $value,string $runId,array &$reads=[]
   }
   if(!isset($value['$path']))throw new RuntimeException('DATA_PACK_FULL_HYDRATION_DISABLED: use $path with pagination or $query for selective access.');
   $path=(string)$value['$path'];
-  if(strlen($path)>500||preg_match('/(^\\.\\.?(?:$|\\.))|[\\/\\\\]/',$path))throw new InvalidArgumentException('DATA_PACK_PATH_INVALID');
+  $segments=explode('.',$path);
+  if(strlen($path)>500||!$segments)throw new InvalidArgumentException('DATA_PACK_PATH_INVALID');
+  foreach($segments as $segment)if($segment===''||$segment==='.'||$segment==='..'||str_contains($segment,'/')||str_contains($segment,'\\\\'))throw new InvalidArgumentException('DATA_PACK_PATH_INVALID');
   $manifest=function_exists('lac_data_pack_manifest_get')?lac_data_pack_manifest_get($reference,$runId):null;
   if(!is_array($manifest))throw new RuntimeException('DATA_PACK_MANIFEST_NOT_FOUND: selective access requires a committed manifest.');
   $fieldMeta=$manifest['fields'][$path]??null;
@@ -180,7 +182,7 @@ function lac_data_pack_resolve_value(mixed $value,string $runId,array &$reads=[]
   $result=lac_data_pack_get_for_run($reference,$runId);
   if($result===null)throw new RuntimeException('DATA_PACK_NOT_FOUND');
   $selected=$result;
-  foreach(explode('.',$path) as $segment){
+  foreach($segments as $segment){
    if($segment===''||!is_array($selected)||!array_key_exists($segment,$selected))throw new RuntimeException('DATA_PACK_FIELD_NOT_FOUND');
    $selected=$selected[$segment];
   }
