@@ -26,7 +26,8 @@ function lac_tool_catalog(): array {
   'list_models' => 'List models available from an OpenAI-compatible API endpoint.',
   'python_calculate' => 'Evaluate mathematical expressions, equations, calculus operations, and matrices.',
   'python_generate_number' => 'Generate numeric random distributions, deterministic sequences, samples/permutations, or transform numeric arrays.',
-  'python_unit_converter' => 'Convert a value between compatible units.',\n  'python_statistics' => 'Compute descriptive statistics, correlations, regressions, and statistical tests.',
+  'python_unit_converter' => 'Convert a value between compatible units.',
+  'python_statistics' => 'Compute descriptive statistics, correlations, regressions, and statistical tests.',
   'python_plot' => 'Create charts from existing numeric or categorical data.',
   'python_dataframe' => 'Profile, filter, and aggregate structured tabular data.',
   'verify_result' => 'Independently verify arithmetic results and record counts.'
