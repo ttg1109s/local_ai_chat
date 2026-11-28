@@ -45,7 +45,7 @@ def convert_unit_tool(args):
         raise ValueError("Unknown dimension. Use one of: " + ", ".join(sorted(UNITS)))
     dimensions = [requested_dimension] if requested_dimension else list(UNITS)
     matches_from = [(dimension, UNITS[dimension][from_unit]) for dimension in dimensions if from_unit in UNITS[dimension]]
-    matches_to = [(dimension, UNITS[dimension][to_unit]) for dimension in dimensions if to_unit in UNITS[dimension]
+    matches_to = [(dimension, UNITS[dimension][to_unit]) for dimension in dimensions if to_unit in UNITS[dimension]]
     if len(matches_from) != 1 or len(matches_to) != 1:
         raise ValueError(f"Unsupported or ambiguous unit: {from_unit if len(matches_from)!=1 else to_unit}")
     dim_from, (scale_from, offset_from) = matches_from[0]
