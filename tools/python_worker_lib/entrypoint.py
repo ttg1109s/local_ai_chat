@@ -5,6 +5,7 @@ from .data_generation import generate_number_tool
 from .dataframe import dataframe_tool
 from .verification import verify_tool
 from .math_ops import calculate
+from .unit_converter import convert_unit_tool
 from .protocol import read_input, _json_safe
 from .visualization import plot_tool
 
@@ -16,6 +17,7 @@ def main():
         if not isinstance(args, dict): raise ValueError("arguments must be a JSON object.")
         output_dir = Path(payload.get("output_dir") or ".").resolve()
         if action == "calculate": result = calculate(args)
+        elif action == "unit_converter": result = convert_unit_tool(args)
         elif action == "generate_number": result = generate_number_tool(args)
         elif action == "statistics": result = statistics_tool(args)
         elif action == "plot": result = plot_tool(args, output_dir)
