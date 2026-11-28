@@ -94,7 +94,8 @@ function lac_tool_validate_arguments(string $name,array $args,array $meta): arra
    if($distribution==='normal'&&isset($args['std'])&&$args['std']<=0)$errors[]='arguments.std must be greater than 0.';
    if($distribution==='lognormal'&&isset($args['std'])&&$args['std']<=0)$errors[]='arguments.std (sigma) must be greater than 0 for lognormal.';
    if(in_array($distribution,['binary','binomial'],true)&&isset($args['probability'])&&($args['probability']<0||$args['probability']>1))$errors[]='arguments.probability must be between 0 and 1.';
-   if($distribution==='poisson'&&isset($args['lambda'])&&$args['lambda']<=0)$errors[]='arguments.lambda must be greater than 0.';
+   if($distribution==='poisson'&&isset($args['lambda'])&&($args['lambda']<=0||$args['lambda']>100))$errors[]='arguments.lambda must be greater than 0 and at most 100.';
+   if($distribution==='binomial'&&isset($args['trials'],$args['count'])&&$args['trials']*$args['count']>1000000)$errors[]='arguments.trials*count must not exceed 1,000,000 for binomial generation';
    if(in_array($distribution,['exponential','gamma'],true)&&isset($args['scale'])&&$args['scale']<=0)$errors[]='arguments.scale must be greater than 0.';
    if(in_array($distribution,['beta','gamma'],true)&&isset($args['alpha'])&&$args['alpha']<=0)$errors[]='arguments.alpha must be greater than 0.';
    if($distribution==='beta'&&isset($args['beta'])&&$args['beta']<=0)$errors[]='arguments.beta must be greater than 0.';
@@ -115,6 +116,7 @@ function lac_tool_validate_arguments(string $name,array $args,array $meta): arra
   }elseif($operation==='transform'){
    if(empty($args['values'])||!is_array($args['values'])||!array_is_list($args['values']))$errors[]='arguments.values is required as a non-empty numeric array for transform.';
    if(!in_array((string)($args['transform_type']??''),['scale','offset','round','clip','normalize','standardize','absolute','floor','ceil'],true))$errors[]='arguments.transform_type is required and must be supported.';
+   if(($args['transform_type']??'')==='clip'&&(!isset($args['min'],$args['max'])))$errors[]='arguments.min and max are required for clip transform.';
    if(isset($args['min'],$args['max'])&&$args['min']>$args['max'])$errors[]='arguments.min must be <= max for clip transform.';
    if(isset($args['target_min'],$args['target_max'])&&$args['target_min']>=$args['target_max'])$errors[]='arguments.target_min must be less than target_max.';
   }else $errors[]='arguments.operation must be random, sequence, sampling, or transform.';
