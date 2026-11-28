@@ -3,7 +3,7 @@ let md=()=>'',post=async()=>{},toast=()=>{},setState=()=>{},startTrace=()=>{},sc
 function init(deps={}){md=deps.md||md;post=deps.post||post;toast=deps.toast||toast;setState=deps.setState||setState;startTrace=deps.startTrace||startTrace;scroll=deps.scroll||scroll;confirmAction=deps.confirmAction||confirmAction;}
 async function handle(ev,obj,ctx){
  if(ev==='meta'){
-  ctx.activeRun=obj.run_id;
+  ctx.activeRun=obj.run_id;ctx.activeMessageId=Number(obj.message_id)||ctx.activeMessageId||0;
   if(obj.message_id){const traceMessage=ctx.assistantBody?.closest('.message');traceMessage?.setAttribute('data-message-id',String(obj.message_id));if(traceMessage)startTrace(traceMessage,Number(obj.message_id));}
   ctx.generationModelLabel=(obj.model_label&&String(obj.model_label).trim())?String(obj.model_label).trim():(ctx.generationModelLabel||ctx.currentModelAlias||'Model');
   setState(ctx.assistantBody,ctx.generationModelLabel,'preparing',true);
