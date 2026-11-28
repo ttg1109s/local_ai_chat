@@ -123,9 +123,9 @@ const setAssistantGenerationState=(body,label,state,preparing=false)=>generation
      for(let block of parsed.blocks){
        const {event:ev,data}=window.LACChatSSE.parseBlock(block);if(!data)continue;
        let obj;try{obj=JSON.parse(data)}catch{continue}
-       const eventContext={assistantBody,baseText,full,usage,finishReason,stopped,assistantMessageId,activeRun,pendingStop,generationModelLabel,currentModelAlias};
+       const eventContext={assistantBody,baseText,full,usage,finishReason,stopped,assistantMessageId,activeRun,activeMessageId,pendingStop,generationModelLabel,currentModelAlias};
        await window.LACChatGenerationEvents.handle(ev,obj,eventContext);
-       ({full,usage,finishReason,stopped,assistantMessageId,activeRun,generationModelLabel}=eventContext);
+       ({full,usage,finishReason,stopped,assistantMessageId,activeRun,activeMessageId,generationModelLabel}=eventContext);
      }
    }
    if(assistantBody){
