@@ -2063,7 +2063,8 @@ INPUT_UNITS = {
   "emissivity": "1",
   "cold_temperature": "K",
   "hot_temperature": "K",
-  "heat": "J"
+  "heat": "J",
+  "stefan_boltzmann_constant": "W/(m2·K4)"
 }
 OUTPUT_META = {
   "velocity": [
