@@ -2140,6 +2140,41 @@ OUTPUT_UNITS = {
   "remaining_quantity": "same as input"
 }
 
+def _evaluate_formula(expression, values):
+    tree = ast.parse(expression, mode="eval")
+
+    def visit(node):
+        if isinstance(node, ast.Expression):
+            return visit(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return node.value
+        if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name) and node.value.id == "x":
+            key = node.slice.value if isinstance(node.slice, ast.Constant) else None
+            if not isinstance(key, str) or key not in values:
+                raise ValueError("Unknown formula input.")
+            return values[key]
+        if isinstance(node, ast.BinOp):
+            left, right = visit(node.left), visit(node.right)
+            ops = {ast.Add: lambda: left+right, ast.Sub: lambda: left-right, ast.Mult: lambda: left*right, ast.Div: lambda: left/right, ast.Pow: lambda: left**right}
+            if type(node.op) not in ops:
+                raise ValueError("Unsupported formula operator.")
+            return ops[type(node.op)]()
+        if isinstance(node, ast.UnaryOp):
+            val = visit(node.operand)
+            if isinstance(node.op, ast.UAdd): return val
+            if isinstance(node.op, ast.USub): return -val
+            raise ValueError("Unsupported unary formula operator.")
+        if isinstance(node, ast.Call) and not node.keywords:
+            args = [visit(a) for a in node.args]
+            funcs = {"abs":abs,"max":max,"min":min,"math.sqrt":math.sqrt,"math.sin":math.sin,"math.cos":math.cos,"math.asin":math.asin,"math.log":math.log,"math.log10":math.log10}
+            name = node.func.id if isinstance(node.func, ast.Name) else (node.func.value.id+"."+node.func.attr if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name) else None)
+            if name not in funcs:
+                raise ValueError("Unsupported formula function.")
+            return funcs[name](*args)
+        raise ValueError("Unsupported formula syntax.")
+
+    return visit(tree)
+
 def _finite_number(value, name):
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
         raise ValueError(f"{name} must be finite numeric.")
@@ -2185,7 +2220,7 @@ def physics_calculate(args):
         else:
             x[key] = numeric
     try:
-        result = eval(selected["expr"], {"__builtins__": {}}, {"x":x,"math":math,"abs":abs,"max":max,"min":min})
+        result = _evaluate_formula(selected["expr"], x)
     except Exception as exc:
         raise ValueError(f"Formula computation failed: {exc}") from None
     if isinstance(result,bool) or not isinstance(result,(int,float)) or not math.isfinite(float(result)):
