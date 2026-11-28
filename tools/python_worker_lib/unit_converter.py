@@ -24,7 +24,6 @@ UNITS = {
     "resistance": {"ohm": (1,0), "Ω": (1,0), "kohm": (1000,0), "kΩ": (1000,0), "Mohm": (1e6,0), "MΩ": (1e6,0),
     "charge": {"C": (1,0), "mC": (1e-3,0), "uC": (1e-6,0), "µC": (1e-6,0), "nC": (1e-9,0),
     "density": {"kg/m3": (1,0), "kg/m^3": (1,0), "g/cm3": (1000,0), "g/cm^3": (1000,0),
-    "wavelength": {"m": (1,0), "nm": (1e-9,0), "um": (1e-6,0), "µm": (1e-6,0), "mm": (1e-3,0), "cm": (1e-2,0),
     "angular_velocity": {"rad/s": (1,0), "rpm": (2*math.pi/60,0),
     "magnetic_field": {"T": (1,0), "mT": (1e-3,0), "uT": (1e-6,0), "µT": (1e-6,0),
     "specific_heat": {"J/(kg K)": (1,0), "J/kgK": (1,0), "kJ/(kg K)": (1000,0),
