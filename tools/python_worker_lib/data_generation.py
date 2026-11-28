@@ -202,7 +202,7 @@ def generate_number_tool(args):
         elif distribution=="lognormal": v=rng.lognormvariate(mean,std)
         else: v=rng.triangular(low,high,mode)
         if isinstance(v,float) and not math.isfinite(v): raise ValueError("Generated non-finite numeric value.")
-        return int(v) if number_type=="integer" else float(v)
+        return int(round(v)) if number_type=="integer" and distribution not in ("binary","integer","binomial","poisson","uniform") else (int(v) if number_type=="integer" else float(v))
     datasets=[]
     for i in range(series_count):
         s=None if seed is None else seed+i; rng=random.Random(s)
