@@ -71,5 +71,5 @@ const typesetMath=(root)=>{
  });
 };
 
-window.LACChatRender={typesetMath};
+window.LACChatRender={renderMathML,typesetMath};
 })();
