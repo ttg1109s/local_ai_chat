@@ -26,6 +26,16 @@ $cases=[
  ['python_generate_number',['distribution'=>'uniform','shape'=>'matrix','rows'=>3,'columns'=>4,'min'=>0,'max'=>1],true,'matrix generator'],
  ['python_generate_number',['distribution'=>'integer','shape'=>'matrix','rows'=>101,'columns'=>100],false,'matrix exceeds item cap'],
  ['python_generate_number',['distribution'=>'binary','count'=>10,'number_type'=>'float'],false,'binary float output rejected'],
+ ['python_generate_number',['distribution'=>'binomial','count'=>10,'trials'=>5,'probability'=>0.2],true,'binomial numeric generation'],
+ ['python_generate_number',['distribution'=>'poisson','count'=>10,'lambda'=>3],true,'poisson numeric generation'],
+ ['python_generate_number',['operation'=>'sequence','sequence_type'=>'fibonacci','count'=>10],true,'fibonacci sequence'],
+ ['python_generate_number',['operation'=>'sequence','sequence_type'=>'polynomial','coefficients'=>[1,2,3],'count'=>5],true,'polynomial sequence'],
+ ['python_generate_number',['operation'=>'sampling','population'=>[1,2,3],'count'=>2,'replace'=>false],true,'sampling without replacement'],
+ ['python_generate_number',['operation'=>'sampling','population'=>[1,2,3],'weights'=>[1,1],'count'=>2],false,'sampling weights must match population'],
+ ['python_generate_number',['operation'=>'transform','transform_type'=>'normalize','values'=>[1,2,3]],true,'numeric normalization'],
+ ['python_generate_number',['operation'=>'transform','transform_type'=>'normalize','target_min'=>5,'target_max'=>2,'values'=>[1,2,3]],false,'invalid normalization target range'],
+ ['python_generate_number',['distribution'=>'beta','count'=>10,'alpha'=>-1,'beta'=>2],false,'invalid beta shape parameter'],
+
 ];
 foreach($cases as [$tool,$args,$expected,$label])tool_reg_assert($validate($tool,$args)['valid']===$expected,$label.' schema validation');
 $exampleCount=0;$failures=[];
