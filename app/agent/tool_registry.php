@@ -237,7 +237,7 @@ python_statistics'=>[
    ['id'=>'DATAFRAME_GROUPBY_VALUE_COLUMN','stage'=>'semantic','description'=>'For groupby aggregations other than count, provide value_column.','fields'=>['operation','aggregation','value_column']]
   ],
   '  'python_generate_number'=>[
-   ['id'=>'GENERATED_NUMBER_PARAMETERS','stage'=>'semantic','description'=>'Distribution-specific parameters must be valid; vector shape requires count, matrix shape requires rows and columns, matrix size is at most 10,000 values, and binary probability is between 0 and 1.','fields'=>['distribution','shape','count','rows','columns','min','max','mean','std','probability','number_type']]
+   ['id'=>'GENERATED_NUMBER_PARAMETERS','stage'=>'semantic','description'=>'Operation-specific numeric parameters must be valid; random distributions, vectors/matrices, deterministic sequences, sampling, and transforms are validated separately.','fields'=>['distribution','shape','count','rows','columns','min','max','mean','std','probability','number_type']]
   ],
 python_statistics'=>[
    ['id'=>'STATISTICS_METHOD_INPUTS','stage'=>'semantic','description'=>'Required values, y, groups, expected, or population_mean depend on method; provide the inputs required by the selected method.','fields'=>['method','values','y','groups','expected','population_mean']]
