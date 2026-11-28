@@ -163,7 +163,7 @@ function lac_data_pack_resolve_value(mixed $value,string $runId,array &$reads=[]
   $path=(string)$value['$path'];
   $segments=explode('.',$path);
   if(strlen($path)>500||!$segments)throw new InvalidArgumentException('DATA_PACK_PATH_INVALID');
-  foreach($segments as $segment)if($segment===''||$segment==='.'||$segment==='..'||str_contains($segment,'/')||str_contains($segment,'\\\\'))throw new InvalidArgumentException('DATA_PACK_PATH_INVALID');
+  foreach($segments as $segment)if($segment===''||$segment==='.'||$segment==='..'||str_contains($segment,'/')||str_contains($segment,'\\'))throw new InvalidArgumentException('DATA_PACK_PATH_INVALID');
   $manifest=function_exists('lac_data_pack_manifest_get')?lac_data_pack_manifest_get($reference,$runId):null;
   if(!is_array($manifest))throw new RuntimeException('DATA_PACK_MANIFEST_NOT_FOUND: selective access requires a committed manifest.');
   $fieldMeta=$manifest['fields'][$path]??null;
