@@ -80,7 +80,7 @@ let recoveryReloading=false;
 async function openConversation(id,locked){return window.LACChatConversationUI.openConversation(id,locked)}
 async function createChat(){return window.LACChatConversationUI.createChat()}
 const setGenerating=(on)=>generationUI.setGenerating(on);function selectedModelDisplay(){const sel=$('#chatModel'),opt=sel?.selectedOptions?.[0];const label=(opt?.dataset?.alias||opt?.textContent||currentModelAlias||'').trim();currentModelAlias=label||'Model';return currentModelAlias}
-const setAssistantGenerationState=(body,label,state,preparing=false)=>generationUI.setAssistantGenerationState(body,label,state,preparing);async function generate(mode='send'){
+const setAssistantGenerationState=(body,label,state,preparing=false)=>generationUI.setAssistantGenerationState(body,label,state,preparing);window.LACChatGenerationEvents.init({md,post,toast,setState:setAssistantGenerationState,startTrace:startMessageTrace,scroll:()=>{$('#messages').scrollTop=$('#messages').scrollHeight},confirmAction:message=>window.confirm(message)});async function generate(mode='send'){
  if(window.LACChatModelUI.isSwitching()){toast('Switching model. Please wait for llama-server to become ready.');return;}if(controller||generationStarting||recoveredGeneration){toast('This conversation is still generating. Please wait for the model to finish.');return;}
  let message=$('#prompt').value.trim();
  if(mode==='send'&&!message)return;
