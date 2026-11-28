@@ -158,7 +158,7 @@ def _parse_substitutions(raw):
     return out
 
 def _convert_data(args):
-    """Safe data conversions: bases, encodings, units, timestamps, and structured text."""
+    """Safe data conversions: bases, encodings, timestamps, and structured text."""
     import base64, csv, io, json, urllib.parse, datetime
     category=str(args.get("conversion_type","")).lower()
     if category=="astronomy": return _astronomy_convert(args)
@@ -191,30 +191,6 @@ def _convert_data(args):
             converted=raw.encode("utf-8").decode("unicode_escape") if operation=="decode" else raw.encode("unicode_escape").decode("ascii")
         else: raise ValueError("encoding must be base64|hex|url|unicode_escape.")
         return {"operation":operation,"encoding":encoding,"converted":converted}
-    if category in ("unit","units"):
-        unit=str(args.get("from_unit","")).lower(); target=str(args.get("to_unit","")).lower()
-        try: numeric=float(value)
-        except (TypeError,ValueError): raise ValueError("value must be numeric.") from None
-        if not math.isfinite(numeric): raise ValueError("value must be finite.")
-        groups={
-          "length":{"m":1,"meter":1,"meters":1,"km":1000,"kilometer":1000,"cm":.01,"mm":.001,"mi":1609.344,"mile":1609.344,"yd":.9144,"yard":.9144,"ft":.3048,"feet":.3048,"in":.0254,"inch":.0254},
-          "mass":{"kg":1,"kilogram":1,"g":.001,"gram":.001,"mg":1e-6,"lb":.45359237,"lbs":.45359237,"oz":.028349523125},
-          "time":{"s":1,"sec":1,"second":1,"seconds":1,"ms":.001,"min":60,"minute":60,"h":3600,"hr":3600,"hour":3600,"day":86400,"d":86400},
-          "volume":{"l":1,"liter":1,"litre":1,"ml":.001,"m3":1000,"gal_us":3.785411784,"gallon":3.785411784,"cup_us":.2365882365},
-          "speed":{"m/s":1,"km/h":1/3.6,"mph":.44704,"ft/s":.3048,"knot":.5144444444},
-          "area":{"m2":1,"km2":1e6,"cm2":1e-4,"ft2":.09290304,"acre":4046.8564224,"ha":10000},
-          "pressure":{"pa":1,"kpa":1000,"bar":100000,"atm":101325,"psi":6894.757293},
-          "energy":{"j":1,"kj":1000,"cal":4.184,"kcal":4184,"wh":3600,"kwh":3600000,"ev":1.602176634e-19},
-          "temperature":{"c":["c"],"f":["f"],"k":["k"]}
-        }
-        if unit in groups["temperature"] and target in groups["temperature"]:
-            c=numeric if unit=="c" else (numeric-32)*5/9 if unit=="f" else numeric-273.15
-            converted=c if target=="c" else c*9/5+32 if target=="f" else c+273.15
-            return {"value":numeric,"from_unit":unit,"to_unit":target,"converted":converted}
-        group=next((g for g,table in groups.items() if unit in table and target in table),None)
-        if not group: raise ValueError("Units are unsupported or belong to different dimensions.")
-        converted=numeric*groups[group][unit]/groups[group][target]
-        return {"value":numeric,"from_unit":unit,"to_unit":target,"converted":converted,"dimension":group}
     if category in ("timestamp","datetime","date_time"):
         operation=str(args.get("operation","to_timestamp")).lower()
         unit=str(args.get("timestamp_unit","seconds")).lower()
@@ -240,7 +216,7 @@ def _convert_data(args):
             converted=json.dumps(list(csv.DictReader(io.StringIO(str(value)))),ensure_ascii=False)
         else: raise ValueError("structured operation must be json_to_csv|csv_to_json.")
         return {"operation":operation,"converted":converted}
-    raise ValueError("conversion_type: number_base|encoding|unit|timestamp|json_csv.")
+    raise ValueError("conversion_type: number_base|encoding|timestamp|json_csv|astronomy.")
 
 def _astronomy_convert(args):
     """Astronomy conversions without network-dependent ephemerides."""
