@@ -38,11 +38,11 @@ function lac_agent_task_save(string $runId,string $state,array $data=[],?string 
    'failure_phase'=>$data['failure_phase']??$old['failure_phase']??null,'failure_message'=>$data['failure_message']??$old['failure_message']??null,
    // Persist receipt metadata and Data Pack availability, never raw tool output.
    'tool_execution_state'=>$data['tool_execution_state']??$old['tool_execution_state']??null,
-   'result_data_retained'=>($state==='failed'&&(int)($data['completed_tool_count']??$old['completed_tool_count']??0)>0),
+   'result_data_retained'=>(in_array($state,['failed','cancelled'],true)&&(int)($data['completed_tool_count']??$old['completed_tool_count']??0)>0),
    'plan'=>$data['plan']??null,'node_results'=>$data['node_results']??[],'pending_approval'=>$data['pending_approval']??$old['pending_approval']??null,'checkpoint_version'=>3];
   // Terminal cleanup releases Data Pack bytes. Keep the immutable receipt/hash, but
   // make the persisted availability flag reflect the post-cleanup reality.
-  $willReleasePacks=function_exists('lac_data_pack_cleanup_enabled')&&lac_data_pack_cleanup_enabled()&&in_array($state,['completed','failed','cancelled'],true) && !($state==='failed'&&(int)($data['completed_tool_count']??$old['completed_tool_count']??0)>0);
+  $willReleasePacks=function_exists('lac_data_pack_cleanup_enabled')&&lac_data_pack_cleanup_enabled()&&in_array($state,['completed','failed','cancelled'],true) && !(in_array($state,['failed','cancelled'],true)&&(int)($data['completed_tool_count']??$old['completed_tool_count']??0)>0);
   if($willReleasePacks&&is_array($safe['tool_execution_state']??null)){
    $safe['tool_execution_state']['data_retention']='released_after_terminal_state';
    if(is_array($safe['tool_execution_state']['committed_executions']??null)){
@@ -55,9 +55,9 @@ function lac_agent_task_save(string $runId,string $state,array $data=[],?string 
   $tmp=$path.'.'.bin2hex(random_bytes(5)).'.tmp';$json=json_encode($safe,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRETTY_PRINT);
   if($json===false||@file_put_contents($tmp,$json,LOCK_EX)===false||!@rename($tmp,$path)){@unlink($tmp);throw new RuntimeException('Could not write the task checkpoint.');}
  } finally {flock($lock,LOCK_UN);fclose($lock);}
- // Keep committed Data Packs after a failed synthesis/transport if tools already
- // completed. This allows diagnosis and avoids deleting successful work.
- $preserveCommittedResults=$state==='failed'&&(int)($safe['completed_tool_count']??0)>0;
+ // Keep committed Data Packs after failed synthesis/transport or user cancellation
+ // if tools already completed. Cancellation does not undo committed side effects.
+ $preserveCommittedResults=in_array($state,['failed','cancelled'],true)&&(int)($safe['completed_tool_count']??0)>0;
  if(in_array($state,['completed','failed','cancelled'],true)&&!$preserveCommittedResults&&function_exists('lac_data_pack_cleanup_enabled')&&lac_data_pack_cleanup_enabled()){
   $researchLedger = dirname(__DIR__, 2) . '/storage/agent-tasks/web-research-' . preg_replace('/[^a-f0-9]/i', '', $runId) . '.json';
   if (is_file($researchLedger)) {
