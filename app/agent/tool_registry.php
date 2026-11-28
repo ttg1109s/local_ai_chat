@@ -125,7 +125,22 @@ function lac_tool_catalog(): array {
     ['distribution'=>'normal','count'=>100,'mean'=>0,'std'=>1,'number_type'=>'integer','seed'=>42],
     ['distribution'=>'binary','count'=>100,'probability'=>0.2,'seed'=>42],
     ['distribution'=>'uniform','shape'=>'matrix','rows'=>5,'columns'=>4,'min'=>0,'max'=>1,'seed'=>42],
-    ['distribution'=>'normal','count'=>30,'mean'=>100,'std'=>15,'seed'=>7,'series_count'=>3]
+    ['distribution'=>'normal','count'=>30,'mean'=>100,'std'=>15,'seed'=>7,'series_count'=>3],
+    ['distribution'=>'binomial','count'=>100,'trials'=>10,'probability'=>0.25,'seed'=>42],
+    ['distribution'=>'poisson','count'=>100,'lambda'=>4,'seed'=>42],
+    ['distribution'=>'exponential','count'=>100,'scale'=>2,'seed'=>42],
+    ['distribution'=>'beta','count'=>100,'alpha'=>2,'beta'=>5,'seed'=>42],
+    ['distribution'=>'gamma','count'=>100,'alpha'=>2,'scale'=>3,'seed'=>42],
+    ['distribution'=>'lognormal','count'=>100,'mean'=>0,'std'=>0.5,'seed'=>42],
+    ['distribution'=>'triangular','count'=>100,'min'=>0,'max'=>10,'mode'=>3,'seed'=>42],
+    ['operation'=>'sequence','sequence_type'=>'arithmetic','start'=>2,'step'=>3,'count'=>10],
+    ['operation'=>'sequence','sequence_type'=>'fibonacci','first'=>0,'second'=>1,'count'=>12],
+    ['operation'=>'sequence','sequence_type'=>'polynomial','coefficients'=>[1,2,1],'count'=>5],
+    ['operation'=>'sampling','population'=>[1,2,3,4,5],'count'=>3,'replace'=>false,'seed'=>42],
+    ['operation'=>'sampling','population'=>[10,20,30],'weights'=>[0.1,0.2,0.7],'count'=>5,'seed'=>42],
+    ['operation'=>'sampling','population'=>[1,2,3,4],'sampling_method'=>'shuffle','seed'=>42],
+    ['operation'=>'transform','transform_type'=>'normalize','values'=>[10,20,30,40]],
+    ['operation'=>'transform','transform_type'=>'standardize','values'=>[10,20,30,40]]
    ]
   ],
 python_statistics'=>[
