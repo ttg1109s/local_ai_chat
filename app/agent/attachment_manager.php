@@ -53,30 +53,29 @@ function lac_attachment_register_tool_result(array $result,array $context=[]): a
 
 /** Remove presentation descriptors when their optional provenance owner is deleted. */
 function lac_attachment_cleanup_message(string $conversationId,string $messageId): int {
- $removed=0;$dir=lac_attachment_store_dir();
- foreach(glob($dir.'/att_*.json')?:[] as $path){
-  if(is_link($path))continue;$record=json_decode((string)@file_get_contents($path),true);
-  if(!is_array($record)||($record['conversation_id']??'')!==$conversationId||($record['message_id']??'')!==$messageId)continue;
-  if(@unlink($path))$removed++;
- }
- return $removed;
+ $lock=lac_attachment_mutation_lock();try{$removed=0;$dir=lac_attachment_store_dir();
+  foreach(glob($dir.'/att_*.json')?:[] as $path){
+   if(is_link($path))continue;$record=json_decode((string)@file_get_contents($path),true);
+   if(!is_array($record)||($record['conversation_id']??'')!==$conversationId||($record['message_id']??'')!==$messageId)continue;
+   if(@unlink($path))$removed++;
+  }return $removed;
+ }finally{lac_attachment_mutation_unlock($lock);}
 }
 function lac_attachment_cleanup_conversation(string $conversationId): int {
- $removed=0;$dir=lac_attachment_store_dir();
- foreach(glob($dir.'/att_*.json')?:[] as $path){
-  if(is_link($path))continue;$record=json_decode((string)@file_get_contents($path),true);
-  if(!is_array($record)||($record['conversation_id']??'')!==$conversationId)continue;
-  if(@unlink($path))$removed++;
- }
- return $removed;
+ $lock=lac_attachment_mutation_lock();try{$removed=0;$dir=lac_attachment_store_dir();
+  foreach(glob($dir.'/att_*.json')?:[] as $path){
+   if(is_link($path))continue;$record=json_decode((string)@file_get_contents($path),true);
+   if(!is_array($record)||($record['conversation_id']??'')!==$conversationId)continue;
+   if(@unlink($path))$removed++;
+  }return $removed;
+ }finally{lac_attachment_mutation_unlock($lock);}
 }
-
 function lac_attachment_cleanup_artifact(string $conversationId,string $artifactId): int {
- $removed=0;$dir=lac_attachment_store_dir();
- foreach(glob($dir.'/att_*.json')?:[] as $path){
-  if(is_link($path))continue;$record=json_decode((string)@file_get_contents($path),true);
-  if(!is_array($record)||($record['conversation_id']??'')!==$conversationId||($record['artifact_ref']??'')!==$artifactId)continue;
-  if(@unlink($path))$removed++;
- }
- return $removed;
+ $lock=lac_attachment_mutation_lock();try{$removed=0;$dir=lac_attachment_store_dir();
+  foreach(glob($dir.'/att_*.json')?:[] as $path){
+   if(is_link($path))continue;$record=json_decode((string)@file_get_contents($path),true);
+   if(!is_array($record)||($record['conversation_id']??'')!==$conversationId||($record['artifact_ref']??'')!==$artifactId)continue;
+   if(@unlink($path))$removed++;
+  }return $removed;
+ }finally{lac_attachment_mutation_unlock($lock);}
 }
