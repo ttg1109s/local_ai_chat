@@ -134,3 +134,39 @@ matrix_bad = run({'action':'generate_number','arguments':{'distribution':'intege
 assert not matrix_bad['success']
 
 print('Python worker tests passed.')
+
+# Expanded random distributions, deterministic numeric sequences, sampling and transforms.
+for dist, args, check in [
+    ('binomial', {'trials':8,'probability':0.5}, lambda v: all(isinstance(x,int) and 0<=x<=8 for x in v)),
+    ('poisson', {'lambda':4}, lambda v: all(isinstance(x,int) and x>=0 for x in v)),
+    ('exponential', {'scale':2}, lambda v: all(isinstance(x,float) and x>=0 for x in v)),
+    ('beta', {'alpha':2,'beta':5}, lambda v: all(0<=x<=1 for x in v)),
+    ('gamma', {'alpha':2,'scale':3}, lambda v: all(x>=0 for x in v)),
+    ('lognormal', {'mean':0,'std':0.5}, lambda v: all(x>0 for x in v)),
+    ('triangular', {'min':0,'max':10,'mode':3}, lambda v: all(0<=x<=10 for x in v)),
+]:
+    result=run({'action':'generate_number','arguments':{'distribution':dist,'count':50,'seed':11,**args}})
+    assert result['success'] and check(result['result']['values']), f'{dist} generation failed'
+
+seq=run({'action':'generate_number','arguments':{'operation':'sequence','sequence_type':'arithmetic','start':2,'step':3,'count':5}})
+assert seq['success'] and seq['result']['values']==[2,5,8,11,14]
+fib=run({'action':'generate_number','arguments':{'operation':'sequence','sequence_type':'fibonacci','first':0,'second':1,'count':8}})
+assert fib['success'] and fib['result']['values']==[0,1,1,2,3,5,8,13]
+primes=run({'action':'generate_number','arguments':{'operation':'sequence','sequence_type':'prime','count':6}})
+assert primes['success'] and primes['result']['values']==[2,3,5,7,11,13]
+poly=run({'action':'generate_number','arguments':{'operation':'sequence','sequence_type':'polynomial','coefficients':[1,2,1],'start':0,'step':1,'count':4}})
+assert poly['success'] and poly['result']['values']==[1,4,9,16]
+
+sample=run({'action':'generate_number','arguments':{'operation':'sampling','population':[1,2,3,4,5],'count':3,'replace':False,'seed':3}})
+assert sample['success'] and len(sample['result']['values'])==3 and len(set(sample['result']['values']))==3
+weighted=run({'action':'generate_number','arguments':{'operation':'sampling','population':[10,20,30],'weights':[0,0,1],'count':5,'seed':4}})
+assert weighted['success'] and set(weighted['result']['values'])=={30}
+shuffle=run({'action':'generate_number','arguments':{'operation':'sampling','population':[1,2,3,4],'sampling_method':'shuffle','seed':4}})
+assert shuffle['success'] and sorted(shuffle['result']['values'])==[1,2,3,4]
+
+normalized=run({'action':'generate_number','arguments':{'operation':'transform','transform_type':'normalize','values':[2,4,6]}})
+assert normalized['success'] and normalized['result']['values']==[0.0,0.5,1.0]
+standardized=run({'action':'generate_number','arguments':{'operation':'transform','transform_type':'standardize','values':[2,4,6]}})
+assert standardized['success'] and abs(sum(standardized['result']['values']))<1e-12
+clipped=run({'action':'generate_number','arguments':{'operation':'transform','transform_type':'clip','values':[-2,1,9],'min':0,'max':5}})
+assert clipped['success'] and clipped['result']['values']==[0.0,1.0,5.0]
