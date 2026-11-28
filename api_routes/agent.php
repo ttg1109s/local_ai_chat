@@ -93,6 +93,7 @@ if($action==='agent_task_approve'){
  require_csrf();
  require_once LAC_ROOT.'/app/agent/task_store.php';
  require_once LAC_ROOT.'/app/agent/tool_executor.php';
+ require_once LAC_ROOT.'/app/agent/execution_store.php';
  require_once LAC_ROOT.'/app/agent/tool_registry.php';
  $runId=(string)($_POST['run_id']??'');
  if(!preg_match('/^[a-f0-9]{20}$/',$runId))out(['error'=>'Invalid run_id.'],422);
