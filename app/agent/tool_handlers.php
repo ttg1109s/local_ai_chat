@@ -312,6 +312,9 @@ function lac_tool_dispatch(PDO $pdo,string $name,array $args,array $meta,array $
     $out=['php'=>PHP_VERSION,'os'=>PHP_OS_FAMILY,'server'=>$_SERVER['SERVER_SOFTWARE']??'','timezone'=>date_default_timezone_get(),'memory_limit'=>ini_get('memory_limit'),'max_execution_time'=>ini_get('max_execution_time')];break;
    case 'list_models':
     $modelsUrl=(string)setting($pdo,'models_endpoint','');if($modelsUrl===''){$endpoint=rtrim((string)setting($pdo,'endpoint',$context['endpoint']??''),'/');$modelsUrl=preg_replace('~/chat/completions$~','/models',$endpoint);}if(!filter_var($modelsUrl,FILTER_VALIDATE_URL)||!in_array(strtolower((string)parse_url($modelsUrl,PHP_URL_SCHEME)),['http','https'],true))throw new RuntimeException('models endpoint is not configured correctly.');$ch=curl_init($modelsUrl);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>8]);$body=curl_exec($ch);$code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);$err=curl_error($ch);curl_close($ch);$out=['http_status'=>$code,'models'=>json_decode((string)$body,true)??[],'error'=>$err?:null];break;
+   case 'physics_calculate':
+    require_once __DIR__.'/physics_calculator.php';
+    $out=lac_physics_calculate($args);break;
    case 'python_calculate':
     $expr=trim((string)($args['expression']??''));
     if(preg_match('/^(?:import\s|from\s+\w+\s+import|def\s|class\s|for\s|while\s|print\s*\(|[A-Za-z_]\w*\s*=|\[.*\bfor\b.*\])/s',$expr))throw new InvalidArgumentException('python_calculate accepts one mathematical expression only and does not run Python code. Select an appropriate data/Python tool.');
