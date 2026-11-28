@@ -318,9 +318,9 @@ function lac_tool_dispatch(PDO $pdo,string $name,array $args,array $meta,array $
     // Forward every schema-validated argument; dropping mode/variable/substitutions
     // silently forced the worker into evaluate mode and broke symbolic operations.
     $out=lac_python_runtime(['action'=>'calculate','arguments'=>$args],(int)$meta['timeout'],$context);break;
-   case 'python_generate_data':
+   case 'python_generate_number':
     $genArgs=$args;
-    $out=lac_python_runtime(['action'=>'generate_data','arguments'=>$genArgs],(int)$meta['timeout'],$context);break;
+    $out=lac_python_runtime(['action'=>'generate_number','arguments'=>$genArgs],(int)$meta['timeout'],$context);break;
    case 'python_statistics':
     $method=(string)$args['method'];$statArgs=['method'=>$method];foreach(['values','y','groups','expected','population_mean','confidence_level','alternative','equal_var'] as $key)if(array_key_exists($key,$args))$statArgs[$key]=$args[$key];
     $out=lac_python_runtime(['action'=>'statistics','arguments'=>$statArgs],(int)$meta['timeout'],$context);break;
