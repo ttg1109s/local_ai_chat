@@ -21,7 +21,11 @@ $cases=[
  ['python_dataframe',['data'=>[['a'=>1,'b'=>2]],'operation'=>'groupby','column'=>'a','aggregation'=>'sum'],false,'groupby requires value column'],
  ['verify_result',['kind'=>'arithmetic','expression'=>'2+2'],false,'arithmetic verification requires actual'],
  ['verify_result',['kind'=>'record_count','records'=>[1,2],'reported_count'=>2],true,'record-count verification'],
- ['python_generate_data',['distribution'=>'uniform','count'=>10,'min'=>5,'max'=>2],false,'invalid generation range'],
+ ['python_generate_number',['distribution'=>'uniform','count'=>10,'min'=>5,'max'=>2],false,'invalid generation range'],
+ ['python_generate_number',['distribution'=>'binary','count'=>10,'probability'=>0.3],true,'binary generator'],
+ ['python_generate_number',['distribution'=>'uniform','shape'=>'matrix','rows'=>3,'columns'=>4,'min'=>0,'max'=>1],true,'matrix generator'],
+ ['python_generate_number',['distribution'=>'integer','shape'=>'matrix','rows'=>101,'columns'=>100],false,'matrix exceeds item cap'],
+ ['python_generate_number',['distribution'=>'binary','count'=>10,'number_type'=>'float'],false,'binary float output rejected'],
 ];
 foreach($cases as [$tool,$args,$expected,$label])tool_reg_assert($validate($tool,$args)['valid']===$expected,$label.' schema validation');
 $exampleCount=0;$failures=[];
@@ -32,7 +36,7 @@ $coverage=[
  'search_web'=>['mode'=>['search','research','deep_research']],
  'manage_websites'=>['action'=>['list','read']],
  'python_calculate'=>['mode'=>['evaluate','simplify','factor','expand','derivative','integrate','limit','solve','nsolve','series','matrix'],'matrix_operation'=>['determinant','inverse','rank','eigenvalues','transpose','rref']],
- 'python_generate_data'=>['distribution'=>['integer','uniform','normal']],
+ 'python_generate_number'=>['distribution'=>['integer','uniform','normal','binary']],
  'python_statistics'=>['method'=>['describe','descriptive','summary','pearson','spearman','kendall','correlation','linear_regression','one_sample_t_test','two_sample_t_test','paired_t_test','mann_whitney','wilcoxon','anova','one_way_anova','normality','chi_square','confidence_interval_mean']],
  'python_plot'=>['chart_type'=>['line','bar','scatter','histogram','boxplot','pie','area']],
  'python_dataframe'=>['operation'=>['profile','filter','groupby'],'operator'=>['eq','ne','gt','gte','lt','lte','contains']],
