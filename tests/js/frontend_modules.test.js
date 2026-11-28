@@ -11,9 +11,9 @@ function loadWindowModule(relative){
 }
 test('SSE parser normalizes CRLF and retains incomplete block',()=>{
  const w=loadWindowModule('assets/js/chat-sse-utils.js');
- const parsed=w.LACChatSSE.parseBuffer('event: delta\\r\\ndata: {"text":"a"}\\r\\n\\r\\nevent: done\\r\\ndata: {"stopped":true}');
+ const parsed=w.LACChatSSE.parseBuffer('event: delta\r\ndata: {"text":"a"}\r\n\r\nevent: done\r\ndata: {"stopped":true}');
  assert.equal(parsed.blocks.length,1);
- assert.equal(parsed.remainder,'event: done\\ndata: {"stopped":true}');
+ assert.equal(parsed.remainder,'event: done\ndata: {"stopped":true}');
  assert.deepEqual({...w.LACChatSSE.parseBlock(parsed.blocks[0])},{event:'delta',data:'{"text":"a"}'});
 });
 test('meta event records run/message IDs and honors pending stop',async()=>{
