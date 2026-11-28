@@ -186,7 +186,7 @@ const setAssistantGenerationState=(body,label,state,preparing=false)=>generation
    else setGenerating(false);
  }
 }
-$('#chatForm').onsubmit=e=>{e.preventDefault();if(!controller)generate('send')};$('#send').addEventListener('click',()=>{if(!$('#prompt').value.trim()||$('#send').disabled)return;const icon=$('#send .material-icons-round');if(!icon)return;const source=icon.getBoundingClientRect(),area=$('#messages').getBoundingClientRect();const startX=source.left+source.width/2,startY=source.top+source.height/2;const endX=area.left+area.width/2,endY=area.top+Math.min(112,Math.max(56,area.height*.2));const ghost=icon.cloneNode(true);ghost.className='material-icons-round send-flight';ghost.textContent='arrow_upward';ghost.setAttribute('aria-hidden','true');ghost.style.left=startX+'px';ghost.style.top=startY+'px';ghost.style.setProperty('--fly-x',(endX-startX)+'px');ghost.style.setProperty('--fly-y',(endY-startY)+'px');document.body.append(ghost);const remove=()=>{if(ghost.isConnected)ghost.remove()};ghost.addEventListener('animationend',remove,{once:true});window.setTimeout(remove,1200)});$('#stop').onclick=async()=>{
+window.LACChatComposerUI.init({$: $,generate,isGenerating:()=>!!controller});$('#stop').onclick=async()=>{
  if(!controller&&recoveredGeneration&&recoveredStreamMessageId){
    $('#stop').disabled=true;$('#stop .material-icons-round').textContent='hourglass_top';
    try{await post('stop_generation',{message_id:recoveredStreamMessageId,conversation_id:current});toast('Stop request sent…');}
@@ -210,7 +210,7 @@ const selectedDocIds=new Set();let stagedDocIds=new Set(),pickerDocuments=[];
 const {getEnabledAgentTools,saveAgentTools}=window.LACChatAgentToolsUI;
 window.LACChatAgentToolsUI.bind();
 const updateToolMode=()=>{const el=$('#chatMode');if(el){const n=selectedDocIds.size;el.innerHTML='<span class="mode-label">Chat</span><span class="mode-rag '+(n?'is-on':'')+'"><i></i>RAG'+(n?' · '+n+' files':'')+'</span>';}$('#attachedFileCount').textContent=String(selectedDocIds.size);$('#attachedFileCount').hidden=!selectedDocIds.size;};
-window.LACChatFilePickerUI.init({$: $,esc,selectedDocIds,updateToolMode});$('#prompt').addEventListener('input',()=>{$('#prompt').style.height='auto';$('#prompt').style.height=Math.min($('#prompt').scrollHeight,180)+'px'});
+window.LACChatFilePickerUI.init({$: $,esc,selectedDocIds,updateToolMode});
 $('#newChat').onclick=createChat;$('#overlay').onclick=()=>$('#sidebar').classList.remove('open');$('#menu').onclick=()=>$('#sidebar').classList.add('open');$('#closeSide').onclick=()=>$('#sidebar').classList.remove('open');
 $('#theme').onclick=()=>{let d=document.documentElement;d.dataset.theme=d.dataset.theme==='dark'?'light':'dark';localStorage.setItem('theme',d.dataset.theme)};document.documentElement.dataset.theme=localStorage.getItem('theme')||'light';
 
