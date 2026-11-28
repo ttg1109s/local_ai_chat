@@ -5,8 +5,20 @@ from .data_generation import generate_number_tool
 from .dataframe import dataframe_tool
 from .verification import verify_tool
 from .math_ops import calculate
+from .unit_converter import convert_unit_tool, UNITS
+from .physics import physics_calculate
 from .protocol import read_input, _json_safe
 from .visualization import plot_tool
+
+def dispatch_unit_converter(args):
+    required = {"value", "dimension", "from_unit", "to_unit"}
+    missing = required - args.keys()
+    if missing:
+        raise ValueError("Missing required unit-converter arguments: " + ", ".join(sorted(missing)))
+    dimension = args.get("dimension")
+    if not isinstance(dimension, str) or dimension not in UNITS:
+        raise ValueError("Unsupported canonical dimension.")
+    return convert_unit_tool(args)
 
 def main():
     try:
@@ -16,6 +28,8 @@ def main():
         if not isinstance(args, dict): raise ValueError("arguments must be a JSON object.")
         output_dir = Path(payload.get("output_dir") or ".").resolve()
         if action == "calculate": result = calculate(args)
+        elif action == "unit_converter": result = dispatch_unit_converter(args)
+        elif action == "physics_calculate": result = physics_calculate(args)
         elif action == "generate_number": result = generate_number_tool(args)
         elif action == "statistics": result = statistics_tool(args)
         elif action == "plot": result = plot_tool(args, output_dir)

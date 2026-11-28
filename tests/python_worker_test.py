@@ -213,3 +213,20 @@ phys=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'
 assert phys['success'] and abs(phys['result']['result']['converted']-1.98847e30)<1e24
 fw=run({'action':'calculate','arguments':{'mode':'convert','conversion_type':'astronomy','astronomy_operation':'frequency_wavelength','value':1,'from_unit':'ghz','to_unit':'cm'}})
 assert fw['success'] and abs(fw['result']['result']['converted']-29.9792458)<1e-6
+
+
+# Unit conversion uses strict canonical dimensions and unit symbols.
+unit_ok = run({'action':'unit_converter','arguments':{'value':1,'dimension':'length','from_unit':'km','to_unit':'m'}})
+assert unit_ok['success'] and unit_ok['result']['result']==1000
+unit_temp = run({'action':'unit_converter','arguments':{'value':32,'dimension':'temperature','from_unit':'degF','to_unit':'degC'}})
+assert unit_temp['success'] and abs(unit_temp['result']['result'])<1e-10
+for invalid_unit_args in (
+    {'value':1,'from_unit':'meter','to_unit':'km','dimension':'length'},
+    {'value':1,'from_unit':'m','to_unit':'km','dimension':'Length'},
+    {'value':1,'from_unit':'kg','to_unit':'lb','dimension':'length'},
+    {'value':1,'from_unit':'m','to_unit':'km'},
+    {'value':1,'from_unit':'m','to_unit':'km','dimension':'distance'},
+    {'value':1,'from_unit':'M','to_unit':'m','dimension':'length'},
+):
+    bad_unit = run({'action':'unit_converter','arguments':invalid_unit_args})
+    assert not bad_unit['success'], f'Non-canonical unit input should be rejected: {invalid_unit_args}'

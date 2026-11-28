@@ -313,8 +313,11 @@ function lac_tool_dispatch(PDO $pdo,string $name,array $args,array $meta,array $
    case 'list_models':
     $modelsUrl=(string)setting($pdo,'models_endpoint','');if($modelsUrl===''){$endpoint=rtrim((string)setting($pdo,'endpoint',$context['endpoint']??''),'/');$modelsUrl=preg_replace('~/chat/completions$~','/models',$endpoint);}if(!filter_var($modelsUrl,FILTER_VALIDATE_URL)||!in_array(strtolower((string)parse_url($modelsUrl,PHP_URL_SCHEME)),['http','https'],true))throw new RuntimeException('models endpoint is not configured correctly.');$ch=curl_init($modelsUrl);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>8]);$body=curl_exec($ch);$code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);$err=curl_error($ch);curl_close($ch);$out=['http_status'=>$code,'models'=>json_decode((string)$body,true)??[],'error'=>$err?:null];break;
    case 'physics_calculate':
-    require_once __DIR__.'/physics_calculator.php';
-    $out=lac_physics_calculate($args);break;
+    $out=lac_python_runtime(['action'=>'physics_calculate','arguments'=>$args],(int)$meta['timeout'],$context);break;
+   case 'python_unit_converter':
+    $unitArgs=['value'=>$args['value'],'from_unit'=>$args['from_unit'],'to_unit'=>$args['to_unit']];
+    if(array_key_exists('dimension',$args))$unitArgs['dimension']=$args['dimension'];
+    $out=lac_python_runtime(['action'=>'unit_converter','arguments'=>$unitArgs],(int)$meta['timeout'],$context);break;
    case 'python_calculate':
     $expr=trim((string)($args['expression']??''));
     if(preg_match('/^(?:import\s|from\s+\w+\s+import|def\s|class\s|for\s|while\s|print\s*\(|[A-Za-z_]\w*\s*=|\[.*\bfor\b.*\])/s',$expr))throw new InvalidArgumentException('python_calculate accepts one mathematical expression only and does not run Python code. Select an appropriate data/Python tool.');
