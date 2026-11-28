@@ -241,6 +241,112 @@ def _convert_data(args):
         return {"operation":operation,"converted":converted}
     raise ValueError("conversion_type: number_base|encoding|unit|timestamp|json_csv.")
 
+def _astronomy_convert(args):
+    """Astronomy conversions without network-dependent ephemerides."""
+    op=str(args.get("astronomy_operation","")).lower()
+    value=args.get("value")
+    def finite_num(x,label="value"):
+        if isinstance(x,bool) or not isinstance(x,(int,float)) or not math.isfinite(float(x)):
+            raise ValueError(label+" must be a finite number.")
+        return float(x)
+    def result(v,unit=None,details=None):
+        out={"converted":v}
+        if unit: out["unit"]=unit
+        if details: out.update(details)
+        return out
+    # Fixed constants and conventional conversion factors.
+    AU_KM=149597870.7
+    PC_AU=206264.80624709636
+    LY_KM=9460730472580.8
+    units_distance={"au":AU_KM,"km":1.0,"m":0.001,"ly":LY_KM,"light_year":LY_KM,"pc":PC_AU*AU_KM,"parsec":PC_AU*AU_KM,"kpc":1000*PC_AU*AU_KM,"mpc":1e6*PC_AU*AU_KM}
+    if op=="distance":
+        x=finite_num(value); a=str(args.get("from_unit","au")).lower(); b=str(args.get("to_unit","km")).lower()
+        if a not in units_distance or b not in units_distance: raise ValueError("distance units: au|km|m|ly|pc|kpc|mpc.")
+        return result(x*units_distance[a]/units_distance[b],b,{"from_value":x,"from_unit":a})
+    if op=="angle":
+        x=finite_num(value); a=str(args.get("from_unit","deg")).lower(); b=str(args.get("to_unit","arcsec")).lower()
+        to_deg={"deg":1,"degree":1,"rad":180/math.pi,"radian":180/math.pi,"arcmin":1/60,"arcminute":1/60,"arcsec":1/3600,"arcsecond":1/3600,"mas":1/3600000,"uas":1/3600000000,"hourangle":15,"hour":15}
+        if a not in to_deg or b not in to_deg: raise ValueError("angle units: deg|rad|arcmin|arcsec|mas|uas|hourangle.")
+        return result(x*to_deg[a]/to_deg[b],b,{"from_value":x,"from_unit":a})
+    if op=="parallax":
+        x=finite_num(value); a=str(args.get("from_unit","arcsec")).lower(); b=str(args.get("to_unit","pc")).lower()
+        angle_factor={"arcsec":1,"arcminute":60,"arcmin":60,"deg":3600,"mas":.001}
+        dist_factor={"pc":1,"kpc":1e-3,"mpc":1e-6}
+        if a in angle_factor and b in dist_factor:
+            arcsec=x*angle_factor[a]
+            if arcsec<=0: raise ValueError("Parallax must be positive.")
+            return result((1/arcsec)*dist_factor[b],b,{"input_parallax_arcsec":arcsec,"method":"inverse-parallax"})
+        if a in dist_factor and b in angle_factor:
+            pc=x/dist_factor[a]
+            if pc<=0: raise ValueError("Distance must be positive.")
+            arcsec=1/pc
+            return result(arcsec/angle_factor[b],b,{"distance_pc":pc,"method":"inverse-parallax"})
+        raise ValueError("parallax supports arcsec|arcmin|deg|mas ↔ pc|kpc|mpc.")
+    if op=="time":
+        x=finite_num(value); a=str(args.get("from_unit","jd")).lower(); b=str(args.get("to_unit","mjd")).lower()
+        if a in ("jd","julian_date") and b in ("mjd","modified_julian_date"): return result(x-2400000.5,b)
+        if a in ("mjd","modified_julian_date") and b in ("jd","julian_date"): return result(x+2400000.5,b)
+        if a in ("unix","unix_seconds") and b in ("jd","julian_date"): return result(x/86400+2440587.5,b)
+        if a in ("jd","julian_date") and b in ("unix","unix_seconds"): return result((x-2440587.5)*86400,b)
+        if a in ("unix","unix_seconds") and b in ("mjd","modified_julian_date"): return result(x/86400+40587,b)
+        if a in ("mjd","modified_julian_date") and b in ("unix","unix_seconds"): return result((x-40587)*86400,b)
+        if a==b: return result(x,b)
+        raise ValueError("time conversions currently support JD, MJD and Unix seconds; astronomical time scales are not interchangeable without leap-second/EOP data.")
+    if op=="coordinate":
+        frame_a=str(args.get("from_frame","icrs")).lower(); frame_b=str(args.get("to_frame","galactic")).lower()
+        lon=finite_num(args.get("longitude"),"longitude"); lat=finite_num(args.get("latitude"),"latitude")
+        unit=str(args.get("coordinate_unit","deg")).lower()
+        factor={"deg":1,"degree":1,"rad":180/math.pi}
+        if unit not in factor: raise ValueError("coordinate_unit must be deg or rad.")
+        lon*=factor[unit]; lat*=factor[unit]
+        if not -90<=lat<=90: raise ValueError("Latitude/declination must be between -90 and 90 degrees.")
+        if frame_a==frame_b: return {"longitude":lon,"latitude":lat,"frame":frame_b,"unit":"deg"}
+        if {frame_a,frame_b} not in ({"icrs","galactic"},{"icrs","ecliptic"}): raise ValueError("Supported coordinate transforms: ICRS↔Galactic and ICRS↔Ecliptic (J2000 approximate).")
+        r=math.radians(lon); d=math.radians(lat)
+        if frame_a=="icrs" and frame_b=="galactic":
+            # IAU J2000 rotation matrix ICRS -> Galactic.
+            M=[[-0.0548755604162154,-0.8734370902348850,-0.4838350155487132],[0.4941094278755837,-0.4448296299600112,0.7469822444972189],[-0.8676661490190047,-0.1980763734312015,0.4559837761750669]]
+        elif frame_a=="galactic" and frame_b=="icrs":
+            M=[[-0.0548755604162154,0.4941094278755837,-0.8676661490190047],[-0.8734370902348850,-0.4448296299600112,-0.1980763734312015],[-0.4838350155487132,0.7469822444972189,0.4559837761750669]]
+        elif frame_a=="icrs" and frame_b=="ecliptic":
+            eps=math.radians(23.439291111)
+            M=[[1,0,0],[0,math.cos(eps),math.sin(eps)],[0,-math.sin(eps),math.cos(eps)]]
+        else:
+            eps=math.radians(23.439291111)
+            M=[[1,0,0],[0,math.cos(eps),-math.sin(eps)],[0,math.sin(eps),math.cos(eps)]]
+        v=[math.cos(d)*math.cos(r),math.cos(d)*math.sin(r),math.sin(d)]
+        w=[sum(M[i][j]*v[j] for j in range(3)) for i in range(3)]
+        out_lon=math.degrees(math.atan2(w[1],w[0]))%360
+        out_lat=math.degrees(math.asin(max(-1,min(1,w[2]))))
+        return {"longitude":out_lon,"latitude":out_lat,"frame":frame_b,"unit":"deg","epoch":"J2000 approximate"}
+    if op=="physical_constant":
+        x=finite_num(value); a=str(args.get("from_unit","")).lower(); b=str(args.get("to_unit","")).lower()
+        tables={
+          "mass":{"kg":1,"solar_mass":1.98847e30,"msun":1.98847e30,"earth_mass":5.9722e24,"me":5.9722e24,"jupiter_mass":1.89813e27,"mj":1.89813e27},
+          "radius":{"m":1,"km":1000,"solar_radius":6.957e8,"rsun":6.957e8,"earth_radius":6.3781e6,"re":6.3781e6,"jupiter_radius":7.1492e7,"rj":7.1492e7},
+          "luminosity":{"w":1,"solar_luminosity":3.828e26,"lsun":3.828e26},
+          "energy":{"j":1,"erg":1e-7,"foe":1e44},
+        }
+        grp=next((g for g,t in tables.items() if a in t and b in t),None)
+        if not grp: raise ValueError("physical_constant categories: mass, radius, luminosity, energy; use explicit supported units.")
+        return result(x*tables[grp][a]/tables[grp][b],b,{"dimension":grp,"from_value":x,"from_unit":a})
+    if op=="frequency_wavelength":
+        x=finite_num(value); a=str(args.get("from_unit","hz")).lower(); b=str(args.get("to_unit","m")).lower()
+        freq={"hz":1,"khz":1e3,"mhz":1e6,"ghz":1e9,"thz":1e12}
+        length={"m":1,"km":1e3,"cm":1e-2,"mm":1e-3,"um":1e-6,"nm":1e-9,"angstrom":1e-10}
+        c=299792458.0
+        if a in freq and b in length:
+            hz=x*freq[a]
+            if hz<=0: raise ValueError("Frequency must be positive.")
+            return result(c/hz/length[b],b,{"frequency_hz":hz,"method":"lambda=c/f"})
+        if a in length and b in freq:
+            lam=x*length[a]
+            if lam<=0: raise ValueError("Wavelength must be positive.")
+            hz=c/lam
+            return result(hz/freq[b],b,{"wavelength_m":lam,"method":"f=c/lambda"})
+        raise ValueError("frequency_wavelength converts frequency units ↔ wavelength units.")
+    raise ValueError("astronomy_operation: distance|angle|parallax|time|coordinate|physical_constant|frequency_wavelength.")
+
 def calculate(args):
     import sympy as sp
     expr = args.get("expression", "")
