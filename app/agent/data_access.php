@@ -117,7 +117,11 @@ function lac_data_pack_query(string $ref,string $runId,string $field,array $quer
  if($sortField!==null){
   usort($rows,static function($a,$b)use($sortField,$sortDir){
    $x=is_array($a)?($a[$sortField]??null):null;$y=is_array($b)?($b[$sortField]??null):null;
-   $cmp=is_numeric($x)&&is_numeric($y)?($x<=>$y):strcmp((string)$x,(string)$y);
+   $xNumeric=is_numeric($x);$yNumeric=is_numeric($y);
+   if($x===null||$y===null){$cmp=$x===null?($y===null?0:-1):1;}
+   elseif($xNumeric&&$yNumeric){$cmp=(float)$x<=>(float)$y;}
+   elseif($xNumeric!==$yNumeric){$cmp=$xNumeric?-1:1;}
+   else{$cmp=strcmp((string)$x,(string)$y);}
    return $cmp*$sortDir;
   });
   $rows=array_slice($rows,$offset,$limit);
