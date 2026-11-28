@@ -18,4 +18,4 @@ $required=[
  "\$data['node_results']??\$old['node_results']??[]",
 ];
 foreach($required as $guard)if(!str_contains($source,$guard))throw new RuntimeException('Partial checkpoint update must preserve prior field: '.$guard);
-echo "agent_task_store_partial_update_preserves_checkpoint_test: PASS\\n";
+echo "agent_task_store_partial_update_preserves_checkpoint_test: PASS\n";
