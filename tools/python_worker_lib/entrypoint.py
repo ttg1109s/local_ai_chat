@@ -6,6 +6,7 @@ from .dataframe import dataframe_tool
 from .verification import verify_tool
 from .math_ops import calculate
 from .unit_converter import convert_unit_tool, UNITS
+from .physics import physics_calculate
 from .protocol import read_input, _json_safe
 from .visualization import plot_tool
 
@@ -28,6 +29,7 @@ def main():
         output_dir = Path(payload.get("output_dir") or ".").resolve()
         if action == "calculate": result = calculate(args)
         elif action == "unit_converter": result = dispatch_unit_converter(args)
+        elif action == "physics_calculate": result = physics_calculate(args)
         elif action == "generate_number": result = generate_number_tool(args)
         elif action == "statistics": result = statistics_tool(args)
         elif action == "plot": result = plot_tool(args, output_dir)
