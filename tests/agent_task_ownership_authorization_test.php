@@ -14,4 +14,10 @@ foreach(['agent_task_status','agent_task_reject','agent_task_approve'] as $actio
  if(!str_contains($chunk,'lac_agent_task_authorized($pdo,$task)'))throw new RuntimeException('Ownership authorization missing from '.$action);
 }
 if(!str_contains($route,"array_filter(\$tasks,static fn(\$task)=>lac_agent_task_authorized(\$pdo,\$task))"))throw new RuntimeException('Recoverable tasks must be ownership-filtered.');
-echo "PASS: Agent task ownership is persisted and task API routes are authorization-gated\n";
+$approvePos=strpos($route,"if(\$action==='agent_task_approve')");
+if($approvePos===false)throw new RuntimeException('Approval route missing.');
+$approveChunk=substr($route,$approvePos);
+$executionStoreRequire=strpos($approveChunk,"require_once LAC_ROOT.'/app/agent/execution_store.php';");
+$managedCall=strpos($approveChunk,'lac_tool_execute_managed(');
+if($executionStoreRequire===false||$managedCall===false||$executionStoreRequire>$managedCall)throw new RuntimeException('Approval route must load execution_store before managed tool execution.');
+echo "PASS: Agent task ownership and approval execution dependency are guarded\\n";
