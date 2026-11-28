@@ -90,7 +90,7 @@ function lac_data_pack_query(string $ref,string $runId,string $field,array $quer
     foreach($aggregates as &$a){
      if($a['op']==='count'){$a['_count']++;continue;}
      $v=is_array($row)?($row[$a['field']]??null):null;if(!is_numeric($v))continue;
-     $n=(float)$v;$a['_sum']+=$n;$a['_count']++;
+     $n=(float)$v;if(!is_finite($n))throw new RuntimeException('DATA_QUERY_AGGREGATE_NON_FINITE');$nextSum=$a['_sum']+$n;if(!is_finite($nextSum))throw new RuntimeException('DATA_QUERY_AGGREGATE_OVERFLOW');$a['_sum']=$nextSum;$a['_count']++;
      if($a['op']==='min')$a['value']=$a['value']===null?$n:min($a['value'],$n);
      if($a['op']==='max')$a['value']=$a['value']===null?$n:max($a['value'],$n);
     }unset($a);
@@ -111,7 +111,7 @@ function lac_data_pack_query(string $ref,string $runId,string $field,array $quer
  foreach($aggregates as &$a){
   if($a['op']==='count')$a['value']=$matched;
   elseif($a['op']==='sum')$a['value']=floor($a['_sum'])===$a['_sum']?(int)$a['_sum']:$a['_sum'];
-  elseif($a['op']==='avg')$a['value']=$a['_count']?$a['_sum']/$a['_count']:null;
+  elseif($a['op']==='avg'){$a['value']=$a['_count']?$a['_sum']/$a['_count']:null;if($a['value']!==null&&!is_finite($a['value']))throw new RuntimeException('DATA_QUERY_AGGREGATE_NON_FINITE');}
   unset($a['_sum'],$a['_count']);
  }unset($a);
  if($sortField!==null){
