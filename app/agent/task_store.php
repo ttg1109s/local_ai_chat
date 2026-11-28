@@ -15,7 +15,7 @@ function lac_agent_task_save(string $runId,string $state,array $data=[],?string 
  require_once __DIR__.'/result_store.php';
  $dir=lac_agent_task_dir();if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('Could not create the task-store directory.');
  $commitLock=null;
- if($state==='cancelled'){$commitLock=@fopen($dir.'/'.preg_replace('/[^a-f0-9]/','',$runId).'.commit.lock','c');if(!$commitLock)throw new RuntimeException('Could not lock task cancellation.');if(!flock($commitLock,LOCK_EX))throw new RuntimeException('Could not acquire task cancellation lock.');}
+ if($state==='cancelled'){$commitLock=@fopen($dir.'/'.preg_replace('/[^a-f0-9]/','',$runId).'.commit.lock','c');if(!$commitLock)throw new RuntimeException('Could not lock task cancellation.');if(!flock($commitLock,LOCK_EX)){fclose($commitLock);$commitLock=null;throw new RuntimeException('Could not acquire task cancellation lock.');}}
  $path=lac_agent_task_path($runId);$lock=@fopen($path.'.lock','c');if(!$lock){if(is_resource($commitLock)){flock($commitLock,LOCK_UN);fclose($commitLock);}throw new RuntimeException('Could not lock the task checkpoint.');}
  try{
   if(!flock($lock,LOCK_EX))throw new RuntimeException('Could not acquire the task-checkpoint lock.');
