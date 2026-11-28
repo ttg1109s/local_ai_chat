@@ -173,3 +173,15 @@ assert clipped['success'] and clipped['result']['values']==[0.0,1.0,5.0]
 
 rounded=run({'action':'generate_number','arguments':{'distribution':'beta','count':30,'alpha':2,'beta':5,'number_type':'integer','seed':12}})
 assert rounded['success'] and all(isinstance(v,int) for v in rounded['result']['values'])
+
+# Expanded calculator: numerical integration, bounded optimization, root finding and matrix ops.
+numeric_integral=run({'action':'calculate','arguments':{'expression':'x^2','mode':'numeric_integrate','variable':'x','lower':0,'upper':1}})
+assert numeric_integral['success'] and abs(numeric_integral['result']['result']['value']-1/3)<1e-7
+minimum=run({'action':'calculate','arguments':{'expression':'(x-3)^2+2','mode':'minimize','lower':-5,'upper':8}})
+assert minimum['success'] and abs(minimum['result']['result']['x']-3)<1e-4 and abs(minimum['result']['result']['value']-2)<1e-5
+root=run({'action':'calculate','arguments':{'expression':'x^2-2','mode':'root','lower':1,'upper':2}})
+assert root['success'] and abs(root['result']['result']['root']-2**0.5)<1e-8
+matmul=run({'action':'calculate','arguments':{'expression':'0','mode':'matrix','matrix':[[1,2],[3,4]],'matrix_b':[[5,6],[7,8]],'matrix_operation':'multiply'}})
+assert matmul['success'] and '19' in matmul['result']['result'] and '22' in matmul['result']['result']
+matpower=run({'action':'calculate','arguments':{'expression':'0','mode':'matrix','matrix':[[1,2],[3,4]],'matrix_operation':'power','matrix_power':2}})
+assert matpower['success'] and '7' in matpower['result']['result'] and '10' in matpower['result']['result']
