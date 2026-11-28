@@ -1,0 +1,41 @@
+name: Clear Workflow Runs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  clear:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete all workflow runs except this run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Current cleanup run: ${CURRENT_RUN_ID}"
+          echo "Fetching workflow runs..."
+
+          gh api --paginate "repos/${REPOSITORY}/actions/runs?per_page=100" \
+            --jq '.workflow_runs[] | [.id, .name, .status, .created_at] | @tsv' |
+          while IFS=$'\t' read -r RUN_ID RUN_NAME RUN_STATUS CREATED; do
+            [[ -z "${RUN_ID}" ]] && continue
+
+            if [[ "${RUN_ID}" == "${CURRENT_RUN_ID}" ]]; then
+              echo "Keeping current cleanup run: ${RUN_ID}"
+              continue
+            fi
+
+            echo "Deleting run ${RUN_ID} | ${RUN_NAME} | ${RUN_STATUS} | ${CREATED}"
+            gh api --silent -X DELETE "repos/${REPOSITORY}/actions/runs/${RUN_ID}" || {
+              echo "Warning: could not delete run ${RUN_ID}"
+            }
+          done
+
+          echo "Cleanup completed. Current run was excluded."
