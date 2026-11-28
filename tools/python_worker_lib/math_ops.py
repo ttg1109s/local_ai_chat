@@ -261,9 +261,9 @@ def calculate(args):
         elif op=="transpose": result=str(M.T)
         elif op=="rref": result=str(M.rref()[0])
         elif op=="trace": result=_sympy_result(M.trace())
-        elif op=="multiply": result=str(M*M) if M.cols==M.rows else "Matrix multiply requires square matrix for single-input power operation."
+        elif op=="multiply":\n            raw_b=args.get("matrix_b")\n            if not isinstance(raw_b,list) or not raw_b or len(raw_b)>30 or any(not isinstance(row,list) or len(row)>30 for row in raw_b): raise ValueError("matrix_b must be a matrix with 1 to 30 rows and columns.")\n            if len({len(row) for row in raw_b})!=1 or any(isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(float(v)) for row in raw_b for v in row): raise ValueError("matrix_b must be rectangular and contain finite numbers.")\n            B=sp.Matrix(raw_b)\n            if M.cols!=B.rows: raise ValueError("Matrix multiplication requires left columns to equal right rows.")\n            result=str(M*B)
         elif op=="power":\n            power=args.get("matrix_power",2)\n            if M.rows!=M.cols: raise ValueError("Matrix power requires a square matrix.")\n            if isinstance(power,bool) or not isinstance(power,int) or not -10<=power<=10: raise ValueError("matrix_power must be an integer from -10 to 10.")\n            result=str(M**power)
-        else: raise ValueError("matrix_operation: determinant|inverse|rank|eigenvalues|transpose|rref.")
+        else: raise ValueError("matrix_operation: determinant|inverse|rank|eigenvalues|transpose|rref|trace|multiply|power.")
     else:
         raise ValueError("mode: evaluate|simplify|factor|expand|derivative|integrate|limit|solve|series|matrix.")
     return {"mode":mode,"expression":expr,"normalized_expression":normalize_math_expression(expr),"variable":variable_name,"result":result}
