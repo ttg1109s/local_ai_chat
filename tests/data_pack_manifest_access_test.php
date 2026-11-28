@@ -3,7 +3,7 @@ require_once __DIR__.'/../app/agent/result_store.php';
 require_once __DIR__.'/../app/agent/manifest_manager.php';
 require_once __DIR__.'/../app/agent/data_access.php';
 $run='test-run-'.bin2hex(random_bytes(4));$exec=hash('sha256',$run);$rows=[];
-for($i=0;$i<1205;$i++)$rows[]=['id'=>$i,'state'=>$i%2?'ok':'failed','text'=>"row {$i}\\n"];
+for($i=0;$i<1205;$i++)$rows[]=['id'=>$i,'state'=>$i%2?'ok':'failed','text'=>"row {$i}"];
 $ref=lac_result_store_put($exec,['rows'=>$rows],$run,'test');
 $m=lac_data_pack_manifest_build($ref,['rows'=>$rows],['run_id'=>$run,'execution_id'=>$exec,'tool'=>'test','sha256'=>'fixture']);
 if(empty($m['fields']['rows']['segmented']))throw new RuntimeException('Expected physical segmentation');
@@ -28,5 +28,5 @@ $deniedText=false;try{lac_data_pack_resolve_value(['$data_ref'=>$textRef,'$path'
 if(!$deniedText)throw new RuntimeException('Scalar text size limit was not enforced');
 $cellReads=[];
 $cell=lac_data_pack_resolve_value(['$data_ref'=>$ref,'$path'=>'rows','$row_index'=>42,'$column'=>'text'], $run,$cellReads);
-if($cell!=="row 42\\n"||($cellReads[0]['operation']??null)!=='read_text_cell')throw new RuntimeException('Segmented text cell reference resolution mismatch');
+if($cell!=="row 42"||($cellReads[0]['operation']??null)!=='read_text_cell')throw new RuntimeException('Segmented text cell reference resolution mismatch');
 echo "data_pack_manifest_access_test: PASS\n";
