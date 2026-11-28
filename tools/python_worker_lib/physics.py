@@ -1966,7 +1966,7 @@ INPUT_UNITS = {
   "area1": "m2",
   "velocity1": "m/s",
   "area2": "m2",
-  "specific_heat": "J/(kg·K)",
+  "specific_heat": "J/(kg K)",
   "temperature_change": "K",
   "latent_heat": "J/kg",
   "celsius": "degC",
