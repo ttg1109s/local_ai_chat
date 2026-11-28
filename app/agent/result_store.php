@@ -170,6 +170,19 @@ function lac_data_pack_resolve_value(mixed $value,string $runId,array &$reads=[]
   if(!is_array($fieldMeta))throw new RuntimeException('DATA_PACK_FIELD_NOT_FOUND');
   if(!empty($fieldMeta['segmented'])){
    require_once __DIR__.'/data_access.php';
+   if(array_key_exists('$row_index',$value)||array_key_exists('$column',$value)){
+    if(!is_int($value['$row_index']??null)||$value['$row_index']<0||$value['$row_index']>2000000||!is_string($value['$column']??null)||$value['$column']==='')throw new InvalidArgumentException('DATA_PACK_TEXT_CELL_REFERENCE_INVALID');
+    $maxChars=(int)($value['$max_chars']??100000);
+    if($maxChars<1||$maxChars>100000)throw new InvalidArgumentException('DATA_PACK_TEXT_LIMIT_INVALID');
+    $page=lac_data_pack_read_segmented($reference,$runId,$path,$value['$row_index'],1);
+    $row=$page['rows'][0]??null;
+    if(!is_array($row)||!array_key_exists($value['$column'],$row))throw new RuntimeException('DATA_PACK_TEXT_CELL_NOT_FOUND');
+    $selected=$row[$value['$column']];
+    if(!is_string($selected))throw new RuntimeException('DATA_PACK_SCALAR_TEXT_REQUIRED');
+    if(mb_strlen($selected)>$maxChars)throw new RuntimeException('DATA_PACK_TEXT_SIZE_LIMIT_EXCEEDED');
+    $reads[]=['data_ref'=>$reference,'path'=>$path,'operation'=>'read_text_cell','row_index'=>$value['$row_index'],'column'=>$value['$column'],'chars'=>mb_strlen($selected)];
+    return $selected;
+   }
    $selected=lac_data_pack_read_segmented($reference,$runId,$path,(int)($value['$offset']??0),(int)($value['$limit']??100));
    $reads[]=['data_ref'=>$reference,'path'=>$path,'operation'=>'read_page'];
    return $selected;
