@@ -22,7 +22,7 @@ $managedCall=strpos($approveChunk,'lac_tool_execute_managed(');
 if($executionStoreRequire===false||$managedCall===false||$executionStoreRequire>$managedCall)throw new RuntimeException('Approval route must load execution_store before managed tool execution.');
 
 if(!str_contains($approveChunk,"\$toolCallId=(string)(\$pending['tool_call_id']??'')")||!str_contains($approveChunk,"\$toolCallId===''||strlen(\$toolCallId)>128")||str_contains($approveChunk,"approved_'.bin2hex(random_bytes(8))"))throw new RuntimeException('Approval must require a stable tool_call_id and never synthesize a new identity.');
-$identityValidationPos=strpos($approveChunk,"\\$toolCallId===''||strlen(\\$toolCallId)>128");
-$claimPos=strpos($approveChunk,"lac_agent_task_save(\\$runId,'executing'");
+$identityValidationPos=strpos($approveChunk,"\$toolCallId===''||strlen(\$toolCallId)>128");
+$claimPos=strpos($approveChunk,"lac_agent_task_save(\$runId,'executing'");
 if($identityValidationPos===false||$claimPos===false||$identityValidationPos>$claimPos)throw new RuntimeException('Approval identity must be validated before task claim.');
 echo "PASS: Agent task ownership and approval execution dependency/identity are guarded\\n";
