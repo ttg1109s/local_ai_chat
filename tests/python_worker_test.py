@@ -114,7 +114,7 @@ assert binary_zero['success'] and set(binary_zero['result']['values']) == {0}
 
 # Matrix shape is row/column aware and reproducible.
 matrix = run({'action':'generate_number','arguments':{'distribution':'uniform','shape':'matrix','rows':4,'columns':3,'min':0,'max':1,'number_type':'float','seed':9}})
-assert matrix['success'] and len(matrix['result']['values']) == 4 and all(len(row)==3 for row in matrix['result']['values'])
+assert matrix['success'] and matrix['result']['count'] == 12 and len(matrix['result']['values']) == 4 and all(len(row)==3 for row in matrix['result']['values'])
 assert all(isinstance(v,float) for row in matrix['result']['values'] for v in row)
 matrix2 = run({'action':'generate_number','arguments':{'distribution':'uniform','shape':'matrix','rows':4,'columns':3,'min':0,'max':1,'number_type':'float','seed':9}})
 assert matrix2['result']['values'] == matrix['result']['values']
