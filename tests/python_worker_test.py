@@ -123,6 +123,12 @@ assert matrix2['result']['values'] == matrix['result']['values']
 normal_int = run({'action':'generate_number','arguments':{'distribution':'normal','count':20,'mean':5,'std':2,'number_type':'integer','seed':10}})
 assert normal_int['success'] and all(isinstance(v,int) for v in normal_int['result']['values'])
 
+# Invalid binary probability and missing matrix dimensions are rejected.
+bad_probability = run({'action':'generate_number','arguments':{'distribution':'binary','count':5,'probability':1.5}})
+assert not bad_probability['success']
+missing_matrix_dims = run({'action':'generate_number','arguments':{'distribution':'integer','shape':'matrix','seed':2}})
+assert not missing_matrix_dims['success']
+
 # Reject matrix dimensions beyond the bounded total.
 matrix_bad = run({'action':'generate_number','arguments':{'distribution':'integer','shape':'matrix','rows':101,'columns':100,'seed':2}})
 assert not matrix_bad['success']
