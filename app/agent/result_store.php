@@ -160,16 +160,33 @@ function lac_data_pack_resolve_value(mixed $value,string $runId,array &$reads=[]
    return $selected;
   }
   if(!isset($value['$path']))throw new RuntimeException('DATA_PACK_FULL_HYDRATION_DISABLED: use $path with pagination or $query for selective access.');
+  $path=(string)$value['$path'];
+  if(strlen($path)>500||preg_match('/(^\\.\\.?(?:$|\\.))|[\\/\\\\]/',$path))throw new InvalidArgumentException('DATA_PACK_PATH_INVALID');
   $manifest=function_exists('lac_data_pack_manifest_get')?lac_data_pack_manifest_get($reference,$runId):null;
-  if(is_array($manifest)&&isset($manifest['fields'][$value['$path']])&&!empty($manifest['fields'][$value['$path']]['segmented'])){
+  if(!is_array($manifest))throw new RuntimeException('DATA_PACK_MANIFEST_NOT_FOUND: selective access requires a committed manifest.');
+  $fieldMeta=$manifest['fields'][$path]??null;
+  if(!is_array($fieldMeta))throw new RuntimeException('DATA_PACK_FIELD_NOT_FOUND');
+  if(!empty($fieldMeta['segmented'])){
    require_once __DIR__.'/data_access.php';
-   $selected=lac_data_pack_read_segmented($reference,$runId,$value['$path'],(int)($value['$offset']??0),(int)($value['$limit']??100));
-   $reads[]=['data_ref'=>$reference,'path'=>$value['$path'],'operation'=>'read_page'];
+   $selected=lac_data_pack_read_segmented($reference,$runId,$path,(int)($value['$offset']??0),(int)($value['$limit']??100));
+   $reads[]=['data_ref'=>$reference,'path'=>$path,'operation'=>'read_page'];
    return $selected;
   }
-  if(!is_array($manifest))throw new RuntimeException('DATA_PACK_MANIFEST_NOT_FOUND: selective access requires a committed manifest.');
-  throw new RuntimeException('DATA_PACK_FIELD_NOT_SEGMENTED: use inspect_data_pack and query_data_pack for dataset access.');
-  $reads[]=['data_ref'=>$reference,'path'=>$value['$path']??null];
+  // Scalar text hydration is intentionally narrow: only manifest-declared,
+  // non-segmented string fields may be injected, and only within a byte/char cap.
+  $maxChars=(int)($value['$max_chars']??100000);
+  if($maxChars<1||$maxChars>100000)throw new InvalidArgumentException('DATA_PACK_TEXT_LIMIT_INVALID');
+  if(($fieldMeta['type']??null)!=='string')throw new RuntimeException('DATA_PACK_FIELD_NOT_SEGMENTED: use inspect_data_pack and query_data_pack for dataset access.');
+  $result=lac_data_pack_get_for_run($reference,$runId);
+  if($result===null)throw new RuntimeException('DATA_PACK_NOT_FOUND');
+  $selected=$result;
+  foreach(explode('.',$path) as $segment){
+   if($segment===''||!is_array($selected)||!array_key_exists($segment,$selected))throw new RuntimeException('DATA_PACK_FIELD_NOT_FOUND');
+   $selected=$selected[$segment];
+  }
+  if(!is_string($selected))throw new RuntimeException('DATA_PACK_SCALAR_TEXT_REQUIRED');
+  if(mb_strlen($selected)>$maxChars)throw new RuntimeException('DATA_PACK_TEXT_SIZE_LIMIT_EXCEEDED');
+  $reads[]=['data_ref'=>$reference,'path'=>$path,'operation'=>'read_text','chars'=>mb_strlen($selected)];
   return $selected;
  }
  if(is_array($value)) {
