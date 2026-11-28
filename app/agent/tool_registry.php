@@ -157,7 +157,7 @@ function lac_tool_catalog(): array {
     ['value'=>90,'from_unit'=>'deg','to_unit'=>'rad']
    ]
   ],
-python_statistics'=>[
+  'python_statistics'=>[
    'when'=>'Use to compute descriptive statistics, correlation, regression, hypothesis tests, ANOVA, normality checks, chi-square tests, and confidence intervals from existing numeric data.',
    'avoid'=>'Do not use to generate data or create charts. Supply values for all methods except ANOVA, which requires groups. Paired methods require paired arrays of equal length.',
    'examples'=>[
