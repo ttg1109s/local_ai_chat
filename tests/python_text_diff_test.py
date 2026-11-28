@@ -19,6 +19,7 @@ def run(payload):
 same = run({"action": "text_diff", "arguments": {"old_text": "a\nb\n", "new_text": "a\nb\n"}})
 assert same["success"] and same["result"]["identical"]
 assert same["result"]["summary"]["changes"] == 0
+assert same["result"]["summary"]["equal_units"] == 2
 
 changed = run({"action": "text_diff", "arguments": {"old_text": "alpha\nbeta\n", "new_text": "alpha\ngamma\n"}})
 assert changed["success"] and len(changed["result"]["changes"]) == 1
