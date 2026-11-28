@@ -1,0 +1,57 @@
+name: Extract main.zip
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract main.zip and remove wrapper directory
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ZIP_FILE="main.zip"
+          if [[ ! -f "$ZIP_FILE" ]]; then
+            echo "::error::Không tìm thấy main.zip ở thư mục gốc repository."
+            exit 1
+          fi
+
+          WORK_DIR="$(mktemp -d)"
+          trap 'rm -rf "$WORK_DIR"' EXIT
+
+          unzip -q "$ZIP_FILE" -d "$WORK_DIR"
+
+          # Strip generic outer directory layer when ZIP contains exactly one
+          # top-level directory (name is irrelevant).
+          shopt -s dotglob nullglob
+          entries=("$WORK_DIR"/*)
+
+          if [[ ${#entries[@]} -eq 1 && -d "${entries[0]}" ]]; then
+            ROOT_DIR="${entries[0]}"
+            cp -a "$ROOT_DIR"/. .
+          else
+            cp -a "$WORK_DIR"/. .
+          fi
+
+          rm -f "$ZIP_FILE"
+
+      - name: Commit extracted files
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Không có thay đổi để commit."
+            exit 0
+          fi
+          git commit -m "Extract main.zip and remove archive"
+          git push
