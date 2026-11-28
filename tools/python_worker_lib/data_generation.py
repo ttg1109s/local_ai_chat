@@ -78,9 +78,7 @@ def generate_number_tool(args):
         if distribution == "integer":
             value = rng.randint(math.ceil(low), math.floor(high))
         elif distribution == "uniform":
-            value = rng.uniform(low, high)
-            if number_type == "integer":
-                value = round(value)
+            value = rng.randint(math.ceil(low), math.floor(high)) if number_type == "integer" else rng.uniform(low, high)
         else:
             value = rng.gauss(mean, std)
             if number_type == "integer":
