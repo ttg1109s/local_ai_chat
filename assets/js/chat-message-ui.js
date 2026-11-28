@@ -19,7 +19,7 @@ function addMessage(role,text,opts={}){
   const bottom=document.createElement('div');bottom.className='message-meta-bottom';bottom.append(status,tools);d.append(bottom);
   tools.querySelector('[data-act=copy]').onclick=()=>{navigator.clipboard?.writeText(body.innerText);notify('Copied')};
   tools.querySelector('[data-act=regenerate]').onclick=()=>gen('regenerate');
-  tools.querySelector('[data-act=continue]').onclick=()=>{const b=tools.querySelector('[data-act=continue]');if(b.hidden||isGenerating())return;b.hidden=true;b.disabled=true;generate('continue').finally(()=>{b.disabled=false})};
+  tools.querySelector('[data-act=continue]').onclick=()=>{const b=tools.querySelector('[data-act=continue]');if(b.hidden||isGenerating())return;b.hidden=true;b.disabled=true;gen('continue').finally(()=>{b.disabled=false})};
   if(opts.continue)tools.querySelector('[data-act=continue]').hidden=false;
   if(opts.usage)tools.querySelector('.token-meta').textContent='Tokens: '+(opts.usage.total_tokens??'No metrics');
   else if(opts.token_count!==null&&opts.token_count!==undefined)tools.querySelector('.token-meta').textContent='Tokens: '+opts.token_count;
