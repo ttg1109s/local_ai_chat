@@ -19,7 +19,7 @@ function lac_manifest_collect_fields(string $prefix,mixed $value,array &$fields,
   $meta['segments']=$segments;$meta['segmented']=true;
  }
  $fields[$prefix]=$meta;
- if(is_array($value)&&!array_is_list($value))foreach($value as $key=>$child)if(is_array($child))lac_manifest_collect_fields($prefix.'.'.(string)$key,$child,$fields,$dataPackId,$dir,$manifestPath,$segmentRows,$depth+1);
+ if(is_array($value)&&!array_is_list($value))foreach($value as $key=>$child)lac_manifest_collect_fields($prefix.'.'.(string)$key,$child,$fields,$dataPackId,$dir,$manifestPath,$segmentRows,$depth+1);
 }
 function lac_data_pack_manifest_build(string $ref,array $result,array $receipt=[],int $segmentRows=1000): array {
  $path=lac_data_pack_manifest_path($ref);if(!$path)throw new InvalidArgumentException('DATA_PACK_REF_INVALID');$dir=dirname($path);if(!is_dir($dir)&&!@mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('MANIFEST_DIR_CREATE_FAILED');$fields=[];$segmentRows=max(100,min(10000,$segmentRows));$id=basename($path,'.json');
