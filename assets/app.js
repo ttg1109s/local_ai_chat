@@ -40,10 +40,10 @@ const syncAssistantActions=(generating=false)=>generationUI.syncAssistantActions
 let recoveryTimer=null,recoveryBusy=false,recoveredGeneration=false,recoveredElapsedBase=0,recoveredElapsedAt=0,recoveredStream=null,recoveredStreamMessageId=0;
 window.LACChatGenerationRecovery.init({$: $,getCurrent:()=>current,md,typeset:typesetMath,refresh:refreshGenerationSnapshot});
 window.LACChatConversationUI.init({$: $,getCurrent:()=>current,setCurrent:id=>{current=id},isGenerating:()=>!!controller,getLastAssistant:()=>lastAssistant,setLastAssistant:value=>{lastAssistant=value},post,stopRecovery,updateToolMode,addMessage,syncAssistantActions,loadHistory,refreshGenerationSnapshot,startRecovery,toast});
-window.LACChatConversationUI.init({$: $,getCurrent:()=>current,setCurrent:id=>{current=id},post,stopRecovery,updateToolMode,addMessage,syncAssistantActions,loadHistory,refreshGenerationSnapshot,startRecovery,toast});
+
 const recoveryUI=window.LACChatGenerationRecovery;
-const stopRecoveredStream=()=>recoveryUI.stopRecoveredStream();function stopRecovery(){if(recoveryTimer){clearInterval(recoveryTimer);recoveryTimer=null}stopRecoveredStream();recoveryBusy=false;recoveredGeneration=false;recoveredElapsedBase=0;recoveredElapsedAt=0;const p=$('#prompt');if(p)p.disabled=false;const s=$('#send');if(s)s.disabled=false;}
-const startRecoveredStream=(messageId,body,label)=>recoveryUI.startRecoveredStream(messageId,body,label);async function refreshGenerationSnapshot(){
+const stopRecoveredStream=()=>{recoveryUI.stopRecoveredStream();recoveredStreamMessageId=0;};function stopRecovery(){if(recoveryTimer){clearInterval(recoveryTimer);recoveryTimer=null}stopRecoveredStream();recoveryBusy=false;recoveredGeneration=false;recoveredElapsedBase=0;recoveredElapsedAt=0;const p=$('#prompt');if(p)p.disabled=false;const s=$('#send');if(s)s.disabled=false;}
+const startRecoveredStream=(messageId,body,label)=>{recoveredStreamMessageId=Number(messageId);return recoveryUI.startRecoveredStream(messageId,body,label);};async function refreshGenerationSnapshot(){
  if(!current||recoveryBusy||controller)return;recoveryBusy=true;
  try{
   const conversationId=current;
