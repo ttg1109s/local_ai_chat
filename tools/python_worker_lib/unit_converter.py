@@ -40,8 +40,12 @@ def convert_unit_tool(args):
     to_unit = str(args.get("to_unit", "")).strip()
     if not from_unit or not to_unit:
         raise ValueError("from_unit and to_unit are required.")
-    matches_from = [(dimension, units[from_unit]) for dimension, units in UNITS.items() if from_unit in units]
-    matches_to = [(dimension, units[to_unit]) for dimension, units in UNITS.items() if to_unit in units]
+    requested_dimension = str(args.get("dimension", "")).strip().lower()
+    if requested_dimension and requested_dimension not in UNITS:
+        raise ValueError("Unknown dimension. Use one of: " + ", ".join(sorted(UNITS)))
+    dimensions = [requested_dimension] if requested_dimension else list(UNITS)
+    matches_from = [(dimension, UNITS[dimension][from_unit]) for dimension in dimensions if from_unit in UNITS[dimension]]
+    matches_to = [(dimension, UNITS[dimension][to_unit]) for dimension in dimensions if to_unit in UNITS[dimension]
     if len(matches_from) != 1 or len(matches_to) != 1:
         raise ValueError(f"Unsupported or ambiguous unit: {from_unit if len(matches_from)!=1 else to_unit}")
     dim_from, (scale_from, offset_from) = matches_from[0]
