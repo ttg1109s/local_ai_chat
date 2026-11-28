@@ -5,9 +5,9 @@ def run(payload):
     p = subprocess.run([sys.executable, str(WORKER)], input=json.dumps(payload), text=True, capture_output=True, timeout=20)
     assert p.returncode == 0, p.stderr
     return json.loads(p.stdout)
-r = run({'action':'generate_data','arguments':{'distribution':'integer','count':12,'min':1,'max':100,'seed':7}})
+r = run({'action':'generate_number','arguments':{'distribution':'integer','count':12,'min':1,'max':100,'seed':7}})
 assert r['success'] and len(r['result']['values']) == 12 and all(isinstance(v, int) for v in r['result']['values'])
-r2 = run({'action':'generate_data','arguments':{'distribution':'integer','count':12,'min':1,'max':100,'seed':7}})
+r2 = run({'action':'generate_number','arguments':{'distribution':'integer','count':12,'min':1,'max':100,'seed':7}})
 assert r2['result']['values'] == r['result']['values'], 'seed must make generated data reproducible'
 r = run({'action':'calculate','arguments':{'expression':'sqrt(81)+2'}})
 assert r['success'] and r['result']['result'] == 11
@@ -16,12 +16,12 @@ ci = r['result']['mean_difference_confidence_interval']
 assert r['success'] and ci['lower'] is not None and ci['upper'] is None
 
 # Multi-series generation returns independent, reproducible arrays in one call.
-multi = run({'action':'generate_data','arguments':{'distribution':'uniform','count':10,'min':0,'max':1,'seed':23,'series_count':3}})
+multi = run({'action':'generate_number','arguments':{'distribution':'uniform','count':10,'min':0,'max':1,'seed':23,'series_count':3}})
 assert multi['success'] and multi['result']['series_count'] == 3
 assert len(multi['result']['datasets']) == 3
 assert all(len(item['values']) == 10 for item in multi['result']['datasets'])
 assert len({tuple(item['values']) for item in multi['result']['datasets']}) == 3
-multi2 = run({'action':'generate_data','arguments':{'distribution':'uniform','count':10,'min':0,'max':1,'seed':23,'series_count':3}})
+multi2 = run({'action':'generate_number','arguments':{'distribution':'uniform','count':10,'min':0,'max':1,'seed':23,'series_count':3}})
 assert [x['values'] for x in multi['result']['datasets']] == [x['values'] for x in multi2['result']['datasets']]
 # Multi-series plotting creates one PNG with all three labelled series.
 import tempfile
@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory() as outdir:
     assert (Path(outdir) / chart['result']['file']).is_file()
 
 # The non-web worker path must not fail because Path is shadowed by a local import.
-web = run({'action':'generate_data','arguments':{'distribution':'normal','count':8,'mean':50,'std':10,'seed':101}})
+web = run({'action':'generate_number','arguments':{'distribution':'normal','count':8,'mean':50,'std':10,'seed':101}})
 assert web['success'] and len(web['result']['values']) == 8
 
 # Reject generation inputs that previously produced empty randint ranges or non-finite data.
@@ -45,7 +45,7 @@ for invalid_args in (
     {'distribution':'normal','count':5,'mean':float('nan'),'std':1},
     {'distribution':'normal','count':5,'mean':0,'std':float('inf')},
 ):
-    invalid = run({'action':'generate_data','arguments':invalid_args})
+    invalid = run({'action':'generate_number','arguments':invalid_args})
     assert not invalid['success'], f'Invalid parameters should fail: {invalid_args}'
 
 
@@ -91,19 +91,40 @@ for bad_gen in (
     {'distribution':'uniform','count':3,'series_count':1.5},
     {'distribution':'normal','count':3,'seed':True},
 ):
-    bad_result = run({'action':'generate_data','arguments':bad_gen})
+    bad_result = run({'action':'generate_number','arguments':bad_gen})
     assert not bad_result['success'], f'Invalid generation dimensions/seed should fail: {bad_gen}'
 
 
 # Finite distribution parameters can still overflow during generation.
-overflow_uniform = run({'action':'generate_data','arguments':{'distribution':'uniform','count':2,'min':-1e308,'max':1e308}})
+overflow_uniform = run({'action':'generate_number','arguments':{'distribution':'uniform','count':2,'min':-1e308,'max':1e308}})
 assert not overflow_uniform['success'] and 'too large to represent safely' in overflow_uniform['error']
-overflow_normal = run({'action':'generate_data','arguments':{'distribution':'normal','count':3,'mean':1.7e308,'std':1e308,'seed':1}})
+overflow_normal = run({'action':'generate_number','arguments':{'distribution':'normal','count':3,'mean':1.7e308,'std':1e308,'seed':1}})
 assert not overflow_normal['success'] and 'non-finite value' in overflow_normal['error']
 
 
 # Null values must not satisfy not-equal filters (SQL-like missing-value semantics).
 df_ne = run({'action':'dataframe','arguments':{'operation':'filter','data':[{'name':'Alice'},{'name':None},{'name':'Bob'}],'column':'name','operator':'ne','value':'Alice'}})
 assert df_ne['success'] and df_ne['result']['rows'] == 1 and df_ne['result']['records'][0]['name'] == 'Bob'
+
+# Binary output is always 0/1 and uses the configured success probability.
+binary = run({'action':'generate_number','arguments':{'distribution':'binary','count':100,'probability':1.0,'seed':8}})
+assert binary['success'] and set(binary['result']['values']) == {1}
+binary_zero = run({'action':'generate_number','arguments':{'distribution':'binary','count':20,'probability':0.0,'seed':8}})
+assert binary_zero['success'] and set(binary_zero['result']['values']) == {0}
+
+# Matrix shape is row/column aware and reproducible.
+matrix = run({'action':'generate_number','arguments':{'distribution':'uniform','shape':'matrix','rows':4,'columns':3,'min':0,'max':1,'number_type':'float','seed':9}})
+assert matrix['success'] and len(matrix['result']['values']) == 4 and all(len(row)==3 for row in matrix['result']['values'])
+assert all(isinstance(v,float) for row in matrix['result']['values'] for v in row)
+matrix2 = run({'action':'generate_number','arguments':{'distribution':'uniform','shape':'matrix','rows':4,'columns':3,'min':0,'max':1,'number_type':'float','seed':9}})
+assert matrix2['result']['values'] == matrix['result']['values']
+
+# Integer output from continuous distributions is explicitly typed.
+normal_int = run({'action':'generate_number','arguments':{'distribution':'normal','count':20,'mean':5,'std':2,'number_type':'integer','seed':10}})
+assert normal_int['success'] and all(isinstance(v,int) for v in normal_int['result']['values'])
+
+# Reject matrix dimensions beyond the bounded total.
+matrix_bad = run({'action':'generate_number','arguments':{'distribution':'integer','shape':'matrix','rows':101,'columns':100,'seed':2}})
+assert not matrix_bad['success']
 
 print('Python worker tests passed.')
