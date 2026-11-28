@@ -13,7 +13,6 @@ function lac_agent_context_estimate_tokens(string $text,?string $modelId=null): 
     if(is_array($config)&&is_callable($config['counter']??null)&&(!$modelId||!($config['model_id']??'')||hash_equals((string)$config['model_id'],$modelId))){
         try{$n=($config['counter'])($text,$modelId);if(is_int($n)&&$n>=0)return $n;}catch(Throwable $e){if(function_exists('lac_agent_log'))lac_agent_log('context_tokenizer_failed',['model_id'=>$modelId,'error'=>$e->getMessage()]);}
     }
-    // Explicit fallback only: byte heuristic is not represented as exact tokenization.
     return (int)ceil(strlen($text) / 3.6);
 }
 function lac_agent_context_relevance_score(array $message,string $objective): float {
@@ -22,7 +21,7 @@ function lac_agent_context_relevance_score(array $message,string $objective): fl
 function lac_agent_context_message_text(array $message): string {
     $content=$message['content']??'';
     if(is_string($content))return $content;
-    $encoded=json_encode($content,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_INVALID_UTF8_SUBSTITUTE);
+    $encoded=json_encode($content,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
     return is_string($encoded)?$encoded:'';
 }
 /** Truncate a protected message to a hard token ceiling. */
@@ -38,54 +37,39 @@ function lac_agent_context_build(array $payload,array $options=[]): array {
     $budget=max(2048,min(65536,(int)($options['token_budget']??12000)));
     $modelId=(string)($options['model_id']??'');
     $reserve=max(256,min((int)floor($budget*.35),(int)($options['reserve_tokens']??1800)));
-    $usable=$budget-$reserve;
+    // Leave explicit headroom for JSON framing, role fields, and the compaction summary,
+    // which are not included in the per-message estimates below.
+    $serializationHeadroom=max(256,(int)ceil($budget*.12));
+    $usable=max(0,$budget-$reserve-$serializationHeadroom);
     $n=count($messages);$keep=[];$protected=[];
-    // Preserve leading system/developer instructions and the original user objective.
-    foreach($messages as $i=>$m){
-        if(!is_array($m))continue;
-        $role=(string)($m['role']??'');
-        if(in_array($role,['system','developer'],true))$protected[$i]=true;
-    }
+    foreach($messages as $i=>$m){if(!is_array($m))continue;$role=(string)($m['role']??'');if(in_array($role,['system','developer'],true))$protected[$i]=true;}
     foreach($messages as $i=>$m){if(is_array($m)&&($m['role']??'')==='user'){$protected[$i]=true;break;}}
     $latest=max(6,min(24,(int)($options['recent_messages']??12)));
     for($i=max(0,$n-$latest);$i<$n;$i++)$keep[$i]=true;
-    // Relevance-aware retention: older evidence can outrank low-value chatter.
     $objective='';foreach($messages as $m)if(is_array($m)&&($m['role']??'')==='user'){$objective=lac_agent_context_message_text($m);break;}
     $ranked=[];foreach($messages as $i=>$m){if(!is_array($m)||isset($keep[$i])||isset($protected[$i]))continue;$score=lac_agent_context_relevance_score($m,$objective);if($score>0)$ranked[]=['index'=>$i,'score'=>$score];}
     usort($ranked,static fn($a,$b)=>($b['score']<=>$a['score'])?:($b['index']<=>$a['index']));
     foreach(array_slice($ranked,0,8) as $candidate)$keep[$candidate['index']]=true;
     foreach($protected as $i=>$_)$keep[$i]=true;
     ksort($keep);$selected=[];$used=0;$omitted=[];
-    // Protected system/developer/objective messages get first allocation, in original order.
-    // Remaining recent/relevant messages are considered newest-first.
-    $protectedIndices=array_keys($protected);sort($protectedIndices);
-    $indices=array_values(array_diff(array_keys($keep),$protectedIndices));rsort($indices);
-    $indices=array_merge($protectedIndices,$indices);
+    $protectedIndices=array_keys($protected);sort($protectedIndices);$indices=array_values(array_diff(array_keys($keep),$protectedIndices));rsort($indices);$indices=array_merge($protectedIndices,$indices);
     foreach($indices as $i){
         $m=$messages[$i]??null;if(!is_array($m))continue;
-        $text=lac_agent_context_message_text($m);$cost=lac_agent_context_estimate_tokens($text,$modelId)+8;
-        $isProtected=isset($protected[$i]);
+        $text=lac_agent_context_message_text($m);$cost=lac_agent_context_estimate_tokens($text,$modelId)+8;$isProtected=isset($protected[$i]);
         if(!$isProtected&&$used+$cost>$usable){$omitted[]=$i;continue;}
-        if($isProtected&&$used+$cost>$usable){
-            // Protected content is truncated adaptively; never allow it to overflow the budget.
-            $m=lac_agent_context_truncate_message($m,max(0,$usable-$used-8),$modelId);
-            $cost=lac_agent_context_estimate_tokens(lac_agent_context_message_text($m),$modelId)+8;
-        }
+        if($isProtected&&$used+$cost>$usable){$m=lac_agent_context_truncate_message($m,max(0,$usable-$used-8),$modelId);$cost=lac_agent_context_estimate_tokens(lac_agent_context_message_text($m),$modelId)+8;}
         if($used+$cost>$usable){$omitted[]=$i;continue;}
         $selected[$i]=$m;$used+=$cost;
     }
-    $omitted=array_values(array_unique(array_merge($omitted,array_diff(range(0,$n-1),array_keys($selected)))));
-    sort($omitted);
+    $omitted=array_values(array_unique(array_merge($omitted,array_diff(range(0,$n-1),array_keys($selected)))));sort($omitted);
     if($omitted){
         $roles=[];$types=[];$digest=[];
-        foreach($omitted as $i){$m=$messages[$i]??[];$role=(string)($m['role']??'unknown');$roles[$role]=($roles[$role]??0)+1;
-            $txt=lac_agent_context_message_text(is_array($m)?$m:[]);
+        foreach($omitted as $i){$m=$messages[$i]??[];$role=(string)($m['role']??'unknown');$roles[$role]=($roles[$role]??0)+1;$txt=lac_agent_context_message_text(is_array($m)?$m:[]);
             if(preg_match('/"type"\s*:\s*"([a-zA-Z0-9_]+)"/',$txt,$mm))$types[$mm[1]]=($types[$mm[1]]??0)+1;
-            if(count($digest)<8&&$txt!=='')$digest[]=['index'=>$i,'role'=>$role,'excerpt'=>substr(preg_replace('/\s+/u',' ',$txt),0,180)];
+            if(count($digest)<4&&$txt!=='')$digest[]=['index'=>$i,'role'=>$role,'excerpt'=>substr(preg_replace('/\s+/u',' ',$txt),0,80)];
         }
         $summary=['type'=>'context_compaction_summary','source'=>'runtime_context_builder','omitted_message_count'=>count($omitted),'omitted_role_counts'=>$roles,'omitted_protocol_type_counts'=>$types,'older_message_excerpts'=>$digest,'authoritative_history'=>'Execution Store and Task Store are authoritative; retrieve Data Pack evidence when needed. This summary is not a substitute for source data.'];
-        $summaryMessage=['role'=>'user','content'=>json_encode($summary,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_INVALID_UTF8_SUBSTITUTE)];
-        $selected[$n]=$summaryMessage;
+        $selected[$n]=['role'=>'user','content'=>json_encode($summary,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_INVALID_UTF8_SUBSTITUTE)];
     }
     ksort($selected);$bounded=$payload;$bounded['messages']=array_values($selected);
     $serialized=json_encode($bounded['messages'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_INVALID_UTF8_SUBSTITUTE);
