@@ -38,7 +38,7 @@ class PhysicsCalculateTests(unittest.TestCase):
             "formula_id": "projectile_range",
             "values": {"initial_speed": 10, "angle": 45, "gravity": 9.80665},
         })
-        self.assertAlmostEqual(result["result"], 10.19367991845056, places=8)
+        self.assertAlmostEqual(result["result"], 10.197162129779283, places=8)
 
     def test_unknown_formula_and_bad_unit_rejected(self):
         with self.assertRaises(ValueError):
