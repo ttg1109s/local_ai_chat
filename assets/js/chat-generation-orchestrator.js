@@ -26,7 +26,7 @@ async function generate(mode='send'){
  st.setController(new AbortController());let attachmentsSubmitted=false;
  timer=setInterval(()=>{const elapsed=assistantBody?.parentElement?.querySelector('.elapsed');if(elapsed)elapsed.textContent=deps.formatHMS(Date.now()-startedAt)},250);
  try{
-  await deps.agentToolsSavePromise;let f=new FormData();f.append('_csrf',deps.csrf);f.append('id',st.getCurrent());f.append('mode',mode);f.append('message',message);
+  await deps.agentToolsSavePromise();let f=new FormData();f.append('_csrf',deps.csrf);f.append('id',st.getCurrent());f.append('mode',mode);f.append('message',message);
   if($('#chatModel')?.value)f.append('model',$('#chatModel').value);
   const webToggle=$('#webSearchToggle');f.append('web_search',webToggle?.checked?'1':'0');f.append('tool_website',$('#toolWebsites')?.checked?'1':'0');f.append('selected_doc_ids',JSON.stringify([...deps.selectedDocIds]));
   let response=await fetch('api.php?action=chat_stream',{method:'POST',body:f,signal:st.getController().signal});
