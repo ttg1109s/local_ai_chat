@@ -31,8 +31,9 @@ function lac_agent_run(PDO $pdo,string $endpoint,array $payload,array $enabledTo
  $requestRunId=(string)($context['run_id']??'');$runId=bin2hex(random_bytes(10));$context['run_id']=$runId;$calls=[];$usage=$dispatchResponse['usage']??null;$content='';$step=0;
  $started=microtime(true);if(function_exists('lac_unified_trace_set_context'))lac_unified_trace_set_context(['run_id'=>$runId,'conversation_id'=>$context['conversation_id']??null,'message_id'=>$context['message_id']??null]);unset($context['deadline_at']);$modelRound=0;$modelTransportFailures=0;
  $invocationState=[];$systemToolUsage=['data_access'=>[],'verify_arithmetic'=>false,'verify_record_count'=>false];$requiredDataPackRefs=[];$requiredArithmeticVerification=false;$requiredRecordCountVerification=false;$mandatoryToolRepairAttempts=0;$repeatCount=0;$lastOperationSignature='';$sameOperationCount=0;$maxRetryPerInvocation=2;$toolHelpGranted=[];$toolHelpDeclined=[];$toolArgumentRetries=[];$protocolInteractionFailures=0;$protocolErrors=0;$protocolRepairAttempts=0;$maxProtocolRepairAttempts=2;$toolSelectionRecoveryAttempts=0;$provenanceRepairAttempts=0;$dataPackRepairAttempts=0;$dataPackReadFailures=[];$completed=0;$failed=0;
- $taskData=static function()use(&$step,&$calls,&$completed,&$failed,&$started,&$available,&$runId,&$userEnabledToolIds):array{
+ $taskData=static function()use(&$step,&$calls,&$completed,&$failed,&$started,&$available,&$runId,&$userEnabledToolIds,&$context):array{
   $snapshot=lac_agent_loop_task_snapshot($step,$calls,$completed,$failed,$started,$available);
+  $snapshot['conversation_id']=(int)($context['conversation_id']??0);
   $snapshot['user_enabled_tools']=$userEnabledToolIds;
   $snapshot['tool_execution_state']=lac_agent_loop_execution_state($runId,$calls,$available);
   return $snapshot;
