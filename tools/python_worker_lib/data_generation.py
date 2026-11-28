@@ -101,7 +101,7 @@ def generate_number_tool(args):
         "distribution": distribution,
         "shape": shape,
         "number_type": number_type,
-        "count": count if shape == "vector" else None,
+        "count": count,
         "rows": rows,
         "columns": columns,
         "series_count": series_count,
