@@ -96,6 +96,8 @@ if($action==='stop_generation'){
    file_put_contents($dir.'/'.$run.'.stop','stop');out(['ok'=>true]);
  }
  if($messageId>0&&$conversationId>0){
+   // Enforce conversation lock authorization for the message-ID stop path as well.
+   lac_require_conversation_unlocked($pdo,$conversationId);
    $q=$pdo->prepare("SELECT id FROM messages WHERE id=? AND conversation_id=? AND role='assistant'");$q->execute([$messageId,$conversationId]);
    if(!$q->fetchColumn())out(['error'=>'Generation task to stop was not found.'],404);
    file_put_contents($dir.'/'.$messageId.'.stop','stop');out(['ok'=>true]);
