@@ -31,6 +31,7 @@ function lac_tool_catalog(): array {
   'python_statistics' => 'Compute descriptive statistics, correlations, regressions, and statistical tests.',
   'python_plot' => 'Create charts from existing numeric or categorical data.',
   'python_dataframe' => 'Profile, filter, and aggregate structured tabular data.',
+  'python_text_diff' => 'Compare two text versions and return exact line or character changes.',
   'verify_result' => 'Independently verify arithmetic results and record counts.'
  ];
  foreach($catalogDescriptions as $toolId=>$shortDescription){if(isset($tools[$toolId]))$tools[$toolId]['catalog_description']=$shortDescription;}
