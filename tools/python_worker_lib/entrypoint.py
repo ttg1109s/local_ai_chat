@@ -1,7 +1,7 @@
 """Entrypoint domain for the Python tool worker."""
 from .common import *
 from .analytics import statistics_tool
-from .data_generation import generate_data_tool
+from .data_generation import generate_number_tool
 from .dataframe import dataframe_tool
 from .verification import verify_tool
 from .math_ops import calculate
@@ -16,7 +16,7 @@ def main():
         if not isinstance(args, dict): raise ValueError("arguments must be a JSON object.")
         output_dir = Path(payload.get("output_dir") or ".").resolve()
         if action == "calculate": result = calculate(args)
-        elif action == "generate_data": result = generate_data_tool(args)
+        elif action == "generate_number": result = generate_number_tool(args)
         elif action == "statistics": result = statistics_tool(args)
         elif action == "plot": result = plot_tool(args, output_dir)
         elif action == "dataframe": result = dataframe_tool(args)
